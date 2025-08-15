@@ -35,11 +35,13 @@ export default{
     font-size: 2rem;
     margin-bottom: 1rem;
     font-weight: 300;
+    color: white
 }
 .home-view p {
     font-size: 1.2rem;
     margin-bottom: 3rem;
     opacity: 0.9;
+    color: white;
 }
 .button_grid {
     display: grid;
