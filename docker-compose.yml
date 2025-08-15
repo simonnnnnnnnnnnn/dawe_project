@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: geo-mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpass
+      - MYSQL_DATABASE=geo_db
+      - MYSQL_USER=dawe_usr
+      - MYSQL_PASSWORD=dawepass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./app/initdb:/docker-entrypoint-initdb.d
+
+  fastapi:
+    build: .
+    container_name: geo-app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/code
+    depends_on:
+      - mysql
+    env_file:
+      - .env
+
+
+volumes:
+  mysql_data:
