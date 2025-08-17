@@ -38,21 +38,17 @@
           </div>
           <div class="form-group">
             <label for="technology">Technology:</label>
-            <select 
-              id="technology" 
-              v-model="localFormData.technology"
+            <input
+              id="technology"
+              v-model="localFormData.organism"
+              type="text"
               class="form-input"
             >
-              <option value="">Select Technology</option>
-              <option value="microarray">Microarray</option>
-              <option value="sequencing">Sequencing</option>
-              <option value="other">Other</option>
-            </select>
           </div>
           <div class="form-group">
             <label for="descript">Description:</label>
-            <textarea 
-              id="descript" 
+            <textarea
+              id="descript"
               v-model="localFormData.descript"
               class="form-input"
               rows="3"
@@ -223,7 +219,7 @@ export default {
   emits: ['submit', 'cancel'],
   setup(props, { emit }) {
     const localFormData = reactive({
-      // Platform fields
+      // Platform fields ----------------------------> add all fields here
       platform_ID: '',
       title: '',
       organism: '',

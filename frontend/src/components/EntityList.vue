@@ -2,7 +2,7 @@
 <template>
   <div class="list-view">
     <div class="list-header">
-      <h2>{{ entityDisplayName }}s</h2>
+      <h2>{{ entityDisplayName }}</h2>
       <div class="list-actions">
         <button @click="showCreateForm = true" class="btn btn-primary">
           Create New {{ entityDisplayName }}
@@ -27,23 +27,23 @@
     <div v-if="!loading && !error" class="data-list">
       <EntityItem
         v-for="item in items"
-        :key="item.id"
+        :key="getItemKey(item)"
         :item="item"
-        :entity="entity"
+        :entity="normalizedEntity"
         @view="viewItem"
         @edit="editItem"
         @delete="deleteItem"
       />
       
       <div v-if="items.length === 0" class="empty-state">
-        No {{ entity }}s found. Create your first one!
+        No {{ normalizedEntity }} found. Create your first one!
       </div>
     </div>
 
-    <!-- Create/Edit Form Modal -->
+    <!-- Create/Edit Form -->
     <EntityForm
       :show="showCreateForm || showEditForm"
-      :entity="entity"
+      :entity="normalizedEntity"
       :is-edit="showEditForm"
       :form-data="formData"
       @submit="submitForm"
@@ -54,18 +54,18 @@
     <EntityDetailView
       :show="showViewModal"
       :item="selectedItem"
-      :entity="entity"
+      :entity="normalizedEntity"
       @close="showViewModal = false"
     />
   </div>
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import * as api from '../api.js'
-import EntityItem from './EntityItem.vue'
-import EntityForm from './EntityForm.vue'
 import EntityDetailView from './EntityDetailView.vue'
+import EntityForm from './EntityForm.vue'
+import EntityItem from './EntityItem.vue'
 
 export default {
   name: 'EntityList',
@@ -97,7 +97,7 @@ export default {
       organism: '',
       technology: '',
       descript: '',
-      // Sample fields  
+      // Sample fields
       sample_ID: '',
       source_name: '',
       characteristics: '',
@@ -109,19 +109,39 @@ export default {
       supplementary_data_link: ''
     })
 
-    const entityDisplayName = computed(() => {
-      return props.entity.charAt(0).toUpperCase() + props.entity.slice(1)
+    // produce normalized enity name
+    const normalizedEntity = computed(() => {
+      const entityMap = {
+        'platforms': 'platform',
+        'samples': 'sample',
+        'series': 'series',
+        'platform': 'platform',
+        'sample': 'sample',
+      }
+      return entityMap[props.entity.toLowerCase()] || props.entity;
     })
+
+    const entityDisplayName = computed(() => {
+      const entity = normalizedEntity.value;
+      return entity.charAt(0).toUpperCase() + entity.slice(1);
+    })
+
+    const getItemKey = (item) => {
+      return getIdField(item) || item.id || Math.random()
+    }
 
     const loadData = async () => {
       loading.value = true
       error.value = ''
 
       try {
-        const response = await api.fetchAll(props.entity, { limit: 10 })
+        console.log(`loading data for entity: ${props.entity}`);
+        const response = await api.fetchAll(normalizedEntity.value, { limit: 10 })
+        console.log('API response:', response);
         items.value = response.data || []
       } catch (err) {
-        error.value = `Failed to load ${props.entity}s: ${err.message}`
+        console.error(`Failed to load data:`, err);
+        error.value = `Failed to load ${normalizedEntity.value}: ${err.message}`
       } finally {
         loading.value = false
       }
@@ -157,20 +177,22 @@ export default {
 
     const deleteItem = async (item) => {
       const idField = getIdField(item)
-      if (confirm(`Are you sure you want to delete this ${props.entity}?`)) {
+      if (confirm(`Are you sure you want to delete this ${normalizedEntity.value}?`)) {
         try {
-          await api.deleteOne(props.entity, idField)
+          await api.deleteOne(normalizedEntity.value, idField)
           await refreshData()
         } catch (err) {
-          error.value = `Failed to delete ${props.entity}: ${err.message}`
+          error.value = `Failed to delete ${normalizedEntity.value}: ${err.message}`
         }
       }
     }
-
+    
+    // now the big probelm: the primKeys ahve different names
     const getIdField = (item) => {
-      switch(props.entity) {
+      const entity = normalizedEntity.value;
+      switch(entity) {
         case 'platform': return item.platform_ID
-        case 'sample': return item.sample_ID  
+        case 'samples': return item.sample_ID
         case 'series': return item.series_ID
         default: return item.id
       }
@@ -188,15 +210,15 @@ export default {
         }
 
         if (showCreateForm.value) {
-          await api.createOne(props.entity, data)
+          await api.createOne(normalizedEntity.value, data)
         } else {
           const idField = getIdField(selectedItem.value)
-          await api.updateOne(props.entity, idField, data)
+          await api.updateOne(normalizedEntity.value, idField, data)
         }
         cancelForm()
         await refreshData()
       } catch (err) {
-        error.value = `Failed to ${showCreateForm.value ? 'create' : 'update'} ${props.entity}: ${err.message}`
+        error.value = `Failed to ${showCreateForm.value ? 'create' : 'update'} ${normalizedEntity.value}: ${err.message}`
       }
     }
 
@@ -213,6 +235,11 @@ export default {
     onMounted(() => {
       loadData()
     })
+    
+    // reload whenever an entity changes
+    watch(() => props.entity, () => {
+      loadData()
+    })
 
     return {
       items,
@@ -223,13 +250,15 @@ export default {
       showViewModal,
       selectedItem,
       formData,
+      normalizedEntity,
       entityDisplayName,
       refreshData,
       viewItem,
       editItem,
       deleteItem,
       submitForm,
-      cancelForm
+      cancelForm,
+      getItemKey
     }
   }
 }

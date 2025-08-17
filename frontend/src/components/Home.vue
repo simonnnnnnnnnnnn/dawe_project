@@ -18,9 +18,9 @@ export default{
                 <span class="btn-icon">🧪</span>
                 <span class="btn-text">Samples</span>
             </button>
-            <button @click="$emit('load-data', 'experiment')" class="main-btn series-btn">
+            <button @click="$emit('load-data', 'series')" class="main-btn series-btn">
                 <span class="btn-icon">📊</span>
-                <span class="btn-text">Experiments</span>
+                <span class="btn-text">Series</span>
             </button>
         </div>
     </div>

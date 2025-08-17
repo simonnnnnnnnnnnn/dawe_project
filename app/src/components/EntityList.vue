@@ -61,17 +61,17 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import * as api from '../api.js'
-import EntityItem from './EntityItem.vue'
-import EntityFormModal from './EntityFormModal.vue'
 import EntityDetailView from './EntityDetailView.vue'
+import EntityForm from './EntityForm.vue'
+import EntityItem from './EntityItem.vue'
 
 export default {
   name: 'EntityList',
   components: {
     EntityItem,
-    EntityFormModal,
+    EntityForm,
     EntityDetailView
   },
   props: {
@@ -121,7 +121,7 @@ export default {
         const response = await api.fetchAll(props.entity, { limit: 10 })
         items.value = response.data || []
       } catch (err) {
-        error.value = `Failed to load ${props.entity}s: ${err.message}`
+        error.value = `Failed to load ${props.entity}: ${err.message}`
       } finally {
         loading.value = false
       }
@@ -170,7 +170,7 @@ export default {
     const getIdField = (item) => {
       switch(props.entity) {
         case 'platform': return item.platform_ID
-        case 'sample': return item.sample_ID  
+        case 'samples': return item.sample_ID
         case 'series': return item.series_ID
         default: return item.id
       }

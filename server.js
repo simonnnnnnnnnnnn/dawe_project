@@ -47,17 +47,31 @@ const models = {
     series_samples: new Series_Samples(db),
 };
 
+// managing the plural forms was quite challenging so this is (hopefully) the fix for this
+const pluralMap ={
+    platform: 'platforms',
+    samples: 'samples',
+    series: 'series',
+    platform_array: 'platform_arrays',
+    sample_array: 'sample_arrays',
+    series_samples: 'series_samples'
+}
+
 
 // in order to ot repeat myself endlessly the ordinary routes (so the ones necesaary for every table) are registeered with the help of another class
 
 function crudRoutes(app, modelName, modelInstance){
+    const pluralName = pluralMap[modelName] || `${modelName}s`;
     const basepath = `/${modelName}`;
+    const pluralPath = `/${pluralName}`;
     const primaryKey = modelInstance.storage.primKeyMap[modelName];
 
     if (!primaryKey || Array.isArray(primaryKey)){
         console.warn(`skipping ${modelName}, no valid primary key`);
         return;
     }
+
+    console.log(`setting up routes for ${modelName}: ${basepath} and ${pluralPath}`);
 
     // get one
     app.get(`${basepath}/:${primaryKey}`, async (req, res) => {
@@ -71,7 +85,7 @@ function crudRoutes(app, modelName, modelInstance){
     });
 
     // get a lot, yes that may not always be the best english...but it we are not in oxford here
-    app.get(`${basepath}s`, async (req, res) => {
+    app.get(pluralPath, async (req, res) => {
         try{
             const {order, ...query} = req.query;
             const results = await modelInstance.search(query, order || null);
@@ -196,6 +210,10 @@ app.get('/series/:series_ID/samples', async (req, res) => {
     }catch(err){
         res.status(500).json({error: err.message});
     }
+});
+
+app.get('/health', (req, res) => {
+    res.json({status: 'ok', timestamp: new Date().toISOString()});
 });
 
 // now the final part: define the port

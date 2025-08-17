@@ -2,10 +2,24 @@ import axios from 'axios';
 
 const api = axios.create({baseURL: 'http://localhost:8282'});
 
-// once again the standard crud functions
-// get all
-export const fetchAll = (entity, params = {}) => api.get(`/${entity}s`, {params});
+// just like in the server, deal with the plurals
+const getPluralRoute = (entity) => {
+    const pluralMap = {
+        platform: 'platforms',
+        samples: 'samples',
+        series: 'series',
+        sample: 'samples'
+    };
+    return pluralMap[entity] || `${entity}s`;
+};
 
+
+// once again the standard crud functions
+// get all --> now woth the plurals
+export const fetchAll = (entity, params = {}) => {
+    const pluralRoute = getPluralRoute(entity);
+    return api.get(`/${pluralRoute}`, {params});
+};
 // get one
 export const fetchOne = (entity, id) => api.get(`/${entity}/${id}`);
 
@@ -33,10 +47,10 @@ export const getPlatformOfSample = (sampleId) => api.get(`/samples/${sampleId}/p
 export const getExpressionOfSample = (sampleId) => api.get(`/samples/${sampleId}/expression`);
 
 // get series the sample is part of (can be multiple
-export const getSeriesOfSample = (sampleId) => api.get(`/sample/${sampleId}/series`);
+export const getSeriesOfSample = (sampleId) => api.get(`/samples/${sampleId}/series`);
 
 // get all info for a sample (experimental)
-export const getFullInfoOfSample = (sampleId) => api.get(`/sample/${sampleId}/full`);
+export const getFullInfoOfSample = (sampleId) => api.get(`/samples/${sampleId}/full`);
 
 // get all samples of a series
 export const getSamplesOfSeries = (seriesId) => api.get(`/series/${seriesId}/samples`);
