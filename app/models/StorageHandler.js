@@ -153,6 +153,18 @@ class StorageHandler{
             console.error('deleteOne failed:', err)
         }*/
     }
+
+    // counter for pagination
+    async count(model, query = {}){
+        const conditions = Object.keys(query).map(h => `${h} = ?`).join(' and ');
+        const values = Object.values(query);
+        let sql = `select count(*) as total from ${model}`;
+        if (conditions){
+            sql += ` where ${conditions}`;
+        }
+        const [rows] = await this.pool.execute(sql, values);
+        return rows[0].total;
+    }
 }
 
 module.exports = StorageHandler;

@@ -20,8 +20,8 @@ class Crud_Basics{
         return this.storage.readOne(this.model, id);
     }
 
-    async search(query, order = null){
-        return this.storage.search(this.model, query, order, 10, 10); // set limit and offset to 10 as the default
+    async search(query, order = null, limit = null, offset = null){
+        return this.storage.search(this.model, query, order, limit, offset);
     }
 
     async updateOne(record){
@@ -31,6 +31,10 @@ class Crud_Basics{
 
     async deleteOne(id){
         return this.storage.deleteOne(this.model, id);
+    }
+
+    async count(query = {}){
+        return this.storage.count(this.model, query);
     }
 }
 

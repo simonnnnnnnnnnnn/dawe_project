@@ -87,9 +87,23 @@ function crudRoutes(app, modelName, modelInstance){
     // get a lot, yes that may not always be the best english...but it we are not in oxford here
     app.get(pluralPath, async (req, res) => {
         try{
-            const {order, ...query} = req.query;
-            const results = await modelInstance.search(query, order || null);
-            res.json(results);
+            const {order, limit, offset, ...filters} = req.query;
+            const parsedLimit = limit ? parseInt(limit, 10) : 10; //defaults 10 and 0
+            const parsedOffset = offset ? parseInt(offset, 10) : 0;
+
+            const [rows, total] = await Promise.all([
+                modelInstance.search(filters, order || null, parsedLimit, parsedOffset),
+                modelInstance.count(filters)
+            ]);
+
+            res.json({
+                total,
+                limit: parsedLimit,
+                offset: parsedOffset,
+                data: rows
+            });
+            //const results = await modelInstance.search(query, order || null);
+            //res.json(results);
         }catch(err){
             res.status(500).json({error: err.message});
         }
