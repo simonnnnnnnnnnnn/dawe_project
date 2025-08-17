@@ -21,7 +21,7 @@ class Crud_Basics{
     }
 
     async search(query, order = null){
-        return this.storage.search(this.model, query, order);
+        return this.storage.search(this.model, query, order, 10, 10); // set limit and offset to 10 as the default
     }
 
     async updateOne(record){

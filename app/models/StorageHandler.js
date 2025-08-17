@@ -102,15 +102,24 @@ class StorageHandler{
 
     // now the search function --> without this part the whole DB is useless
     // after all whats the point in saving data when u cant even access it..
-    async search(model, query = {}, order = null){
+    async search(model, query = {}, order = null, limit = null, offset = null){
+        const { limit: qLimit, offset: qOffset, ...filters } = query;
         const conditions = Object.keys(query).map(h => `${h} = ?`).join(' and ');
-        const values = Object.values(query);
+        const values = Object.values(filters);
         let sql = `select * from ${model}`;
         if (conditions){
             sql += ` where ${conditions}`;
         }
         if (order){
             sql += ` order by ${order}`;
+        }
+        if (limit !== null && limit !== undefined){
+            sql += ` limit ?`;
+            values.push(parseInt(limit, 10));
+        }
+        if (offset !== null && offset !== undefined){
+            sql += ` offset ?`;
+            values.push(parseInt(offset, 10));
         }
 
         return this._all(sql, values); //here the all func is nice --> queries can absolutely return multiple rows
