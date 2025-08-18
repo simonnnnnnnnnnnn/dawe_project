@@ -1,8 +1,7 @@
 "use strict";
 
 const mysql = require('mysql2/promise');
-const path = require('path');
-const { el } = require('vuetify/locale');
+const path = require('path')
 
 class StorageHandler{
     constructor({host, user, password, database, port}){
@@ -44,21 +43,8 @@ class StorageHandler{
 
     // when getting one row getting all of them is the next step i guess
     async _all(sql, params = []){
-
-        if (!Array.isArray(params)) params = [params];
-
-        console.debug('[StorageHandler] executing SQL:', sql);
-        console.debug('[StorageHandler] with params:', params);
-
-        try{
-            const [rows] = await this.pool.execute(sql, params);
-            return rows;
-        }catch(err){
-            console.error('[StorageHandler] SQL execution failed:', { sql, params, error: err && err.message });
-            throw err;
-        }
-        //const [rows] = await this.pool.execute(sql, params);
-        //return rows;
+        const [rows] = await this.pool.execute(sql, params);
+        return rows;
     }
 
     // this might seem weird but comes in handy when deleting stuff --> when some sql is run but no return is expected
@@ -117,7 +103,7 @@ class StorageHandler{
     // now the search function --> without this part the whole DB is useless
     // after all whats the point in saving data when u cant even access it..
     async search(model, query = {}, order = null, limit = null, offset = null){
-        /*const { limit: qLimit, offset: qOffset, ...filters } = query;
+        const { limit: qLimit, offset: qOffset, ...filters } = query;
         const conditions = Object.keys(query).map(h => `${h} = ?`).join(' and ');
         const values = Object.values(filters);
         let sql = `select * from ${model}`;
@@ -136,68 +122,7 @@ class StorageHandler{
             values.push(parseInt(offset, 10));
         }
 
-        return this._all(sql, values); //here the all func is nice --> queries can absolutely return multiple rows*/
-
-        const filters = { ...query };
-        delete filters.limit;
-        delete filters.offset;
-
-        const conditionKeys = Object.keys(filters);
-        const conditions = conditionKeys.map(h => `${h} = ?`).join(' and ');
-        const values = conditionKeys.map(h => filters[h]);
-
-        // basic sql
-        let sql = `select * from ${model}`;
-        if (conditions){
-            sql += ` where ${conditions}`;
-        }
-        if (order){
-            sql += ` order by ${order}`;
-        }
-
-        // validate limit offset manually as that seems to cause problems
-        /*
-        const hasLimit = limit !== null && limit !== undefined && limit !== '';
-        const hasOffset = offset !== null && offset !== undefined && offset !== '';
-
-        if (hasLimit){
-            sql += `limit ?`;
-            values.push(Number(limit));
-            if (hasOffset){
-                sql += ` offset ?`;
-                values.push(Number(offset));
-            }
-        } else if (hasOffset){
-            sql += ` limit ? offset ?`;
-            values.push(Number(2 ** 8 -1)); // i doubt there will be more in this small data warehouse
-            values.push(Number(offset));
-        }
-        */
-       //alternate version
-        if (limit !== null && limit !== undefined) {
-            const safeLimit = Math.max(0, parseInt(limit, 10));
-            sql += ` limit ${safeLimit}`;
-            if (offset !== null && offset !== undefined) {
-                const safeOffset = Math.max(0, parseInt(offset, 10));
-                sql += ` offset ${safeOffset}`;
-            }
-        }
-
-        // more dbugging
-        console.debug('[StorageHandler] search SQL:', sql);
-        console.debug('[StorageHandler] search Params:', values);
-
-        // a last check
-        const expectedPlaceholders = (sql.match(/\?/g) || []).length;
-        if (expectedPlaceholders !== values.length){
-            console.error('[StorageHandler] SQL placeholders and values mismatch:', {
-                sql,
-                expectedPlaceholders,
-                actualValues: values.length, values
-            });
-            throw new Error(`SQL placeholders and values mismatch, expected ${expectedPlaceholders} but got ${values.length}`);
-        }
-        return this._all(sql, values);
+        return this._all(sql, values); //here the all func is nice --> queries can absolutely return multiple rows
     }
 
     // update
@@ -231,22 +156,6 @@ class StorageHandler{
 
     // counter for pagination
     async count(model, query = {}){
-
-        const filters = { ...query };
-        delete filters.limit;
-        delete filters.offset;
-
-        const conditions = Object.keys(filters).map(h => `${h} = ?`).join(' and ');
-        const values = Object.values(filters);
-
-        let sql = `select count(*) as total from ${model}`;
-        if (conditions){
-            sql += ` where ${conditions}`;
-        }
-        console.debug('[StorageHandler] count SQL:', sql, 'Params:', values);
-        const rows = await this._all(sql, values);
-        return rows && rows[0] ? Number(rows[0].total) : 0;
-        /*
         const conditions = Object.keys(query).map(h => `${h} = ?`).join(' and ');
         const values = Object.values(query);
         let sql = `select count(*) as total from ${model}`;
@@ -254,7 +163,7 @@ class StorageHandler{
             sql += ` where ${conditions}`;
         }
         const [rows] = await this.pool.execute(sql, values);
-        return rows[0].total;*/
+        return rows[0].total;
     }
 }
 

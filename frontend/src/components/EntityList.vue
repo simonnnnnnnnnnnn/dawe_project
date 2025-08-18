@@ -13,34 +13,71 @@
       </div>
     </div>
 
-    <!-- Loading -->
+    <!-- Error Display -->
+    <div v-if="error" class="error">
+      Error: {{ error }}
+    </div>
+
+    <!-- Loading Display -->
     <div v-if="loading" class="loading">
       Loading...
     </div>
 
-    <!-- Error -->
-    <div v-if="error" class="error">
-      {{ error }}
-    </div>
+    <!-- Data List with Pagination -->
+    <div v-else class="data-container">
+      <!-- Meta Information -->
+      <div class="meta">
+        Showing {{ items.length }} of {{ total }} — page {{ page + 1 }} / {{ totalPages }}
+      </div>
 
-    <!-- Data List -->
-    <div v-if="!loading && !error" class="data-list">
-      <EntityItem
-        v-for="item in items"
-        :key="getItemKey(item)"
-        :item="item"
-        :entity="normalizedEntity"
-        @view="viewItem"
-        @edit="editItem"
-        @delete="deleteItem"
-      />
-      
-      <div v-if="items.length === 0" class="empty-state">
-        No {{ normalizedEntity }} found. Create your first one!
+      <!-- Items List -->
+      <div class="data-list">
+        <EntityItem
+          v-for="item in items"
+          :key="getItemKey(item)"
+          :item="item"
+          :entity="normalizedEntity"
+          @view="viewItem"
+          @edit="editItem"
+          @delete="deleteItem"
+        />
+        
+        <div v-if="items.length === 0" class="empty-state">
+          No {{ normalizedEntity }} found. Create your first one!
+        </div>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div class="pagination" v-if="totalPages > 1">
+        <button @click="prevPage" :disabled="page === 0" class="btn btn-pagination">
+          Prev
+        </button>
+        <button @click="nextPage" :disabled="(page + 1) >= totalPages" class="btn btn-pagination">
+          Next
+        </button>
+
+        <label class="page-goto">
+          Page
+          <input 
+            type="number" 
+            v-model.number="goto" 
+            min="1" 
+            :max="totalPages" 
+            class="page-input"
+          />
+          <button @click="goToInput" class="btn btn-pagination">Go</button>
+        </label>
+
+        <label class="per-page">
+          Per page:
+          <select v-model.number="limit" class="limit-select">
+            <option v-for="n in [5,10,20,50]" :key="n" :value="n">{{ n }}</option>
+          </select>
+        </label>
       </div>
     </div>
 
-    <!-- Create/Edit Form -->
+    <!-- Create/Edit Form Modal -->
     <EntityForm
       :show="showCreateForm || showEditForm"
       :entity="normalizedEntity"
@@ -78,13 +115,24 @@ export default {
     entity: {
       type: String,
       required: true
+    },
+    initialLimit: {
+      type: Number,
+      default: 10
     }
   },
   emits: ['go-home'],
   setup(props) {
+    // Reactive state for pagination
     const items = ref([])
+    const total = ref(0)
+    const limit = ref(props.initialLimit)
+    const page = ref(0) // zero-based page index
     const loading = ref(false)
-    const error = ref('')
+    const error = ref(null)
+    const goto = ref(1)
+
+    // Modal and form state
     const showCreateForm = ref(false)
     const showEditForm = ref(false)
     const showViewModal = ref(false)
@@ -109,48 +157,116 @@ export default {
       supplementary_data_link: ''
     })
 
-    // produce normalized enity name
+    // Computed properties
+    const currentOffset = computed(() => page.value * limit.value)
+
+    const totalPages = computed(() => {
+      if (!limit.value) return 1
+      return Math.max(1, Math.ceil((Number(total.value) || 0) / limit.value))
+    })
+
+    // Normalize entity names to singular form
     const normalizedEntity = computed(() => {
       const entityMap = {
         'platforms': 'platform',
         'samples': 'sample',
         'series': 'series',
         'platform': 'platform',
-        'sample': 'sample',
+        'sample': 'sample'
       }
-      return entityMap[props.entity.toLowerCase()] || props.entity;
+      return entityMap[props.entity.toLowerCase()] || props.entity
     })
 
     const entityDisplayName = computed(() => {
-      const entity = normalizedEntity.value;
-      return entity.charAt(0).toUpperCase() + entity.slice(1);
+      const entity = normalizedEntity.value
+      return entity.charAt(0).toUpperCase() + entity.slice(1)
     })
+
+    // Helper functions
+    const getIdField = (item) => {
+      const entity = normalizedEntity.value
+      switch(entity) {
+        case 'platform': return item.platform_ID
+        case 'sample': return item.sample_ID
+        case 'series': return item.series_ID
+        default: return item.id
+      }
+    }
 
     const getItemKey = (item) => {
       return getIdField(item) || item.id || Math.random()
     }
 
-    const loadData = async () => {
+    // Data loading with pagination
+    const loadPage = async (p = page.value) => {
       loading.value = true
-      error.value = ''
-
+      error.value = null
+      
       try {
-        console.log(`loading data for entity: ${props.entity}`);
-        const response = await api.fetchAll(normalizedEntity.value, { limit: 10 })
-        console.log('API response:', response);
-        items.value = response.data || []
+        // Clamp page to valid range
+        if (p < 0) p = 0
+        if (p >= totalPages.value && totalPages.value > 0) p = Math.max(0, totalPages.value - 1)
+        page.value = p
+        goto.value = page.value + 1
+
+        const params = { 
+          limit: limit.value, 
+          offset: currentOffset.value 
+        }
+
+        console.log(`Loading page ${p + 1} for entity: ${normalizedEntity.value}`, params)
+        const response = await api.fetchAll(normalizedEntity.value, params)
+        console.log('API Response:', response)
+
+        // Handle different response formats
+        if (response && response.data && typeof response.data === 'object' && Array.isArray(response.data.data)) {
+          // Structured response: { total, limit, offset, data }
+          items.value = response.data.data
+          total.value = Number(response.data.total) || items.value.length
+          
+          // Sync server-returned paging if provided
+          if (response.data.limit) limit.value = Number(response.data.limit)
+          if (response.data.offset !== undefined) {
+            page.value = Math.floor(Number(response.data.offset || 0) / limit.value)
+            goto.value = page.value + 1
+          }
+        } else if (response && Array.isArray(response.data)) {
+          // Simple array response (backward compatibility)
+          items.value = response.data
+          total.value = response.data.length
+        } else {
+          items.value = []
+          total.value = 0
+        }
       } catch (err) {
-        console.error(`Failed to load data:`, err);
-        error.value = `Failed to load ${normalizedEntity.value}: ${err.message}`
+        console.error('Failed to load data:', err)
+        error.value = err?.response?.data?.error || err.message || String(err)
+        items.value = []
+        total.value = 0
       } finally {
         loading.value = false
       }
     }
 
-    const refreshData = () => {
-      loadData()
+    // Pagination controls
+    const nextPage = () => {
+      if ((page.value + 1) < totalPages.value) loadPage(page.value + 1)
     }
 
+    const prevPage = () => {
+      if (page.value > 0) loadPage(page.value - 1)
+    }
+
+    const goToInput = () => {
+      const target = Math.min(Math.max(1, Number(goto.value || 1)), totalPages.value)
+      loadPage(target - 1)
+    }
+
+    const refreshData = () => {
+      loadPage(page.value)
+    }
+
+    // CRUD operations
     const viewItem = (item) => {
       selectedItem.value = item
       showViewModal.value = true
@@ -184,17 +300,6 @@ export default {
         } catch (err) {
           error.value = `Failed to delete ${normalizedEntity.value}: ${err.message}`
         }
-      }
-    }
-    
-    // now the big probelm: the primKeys ahve different names
-    const getIdField = (item) => {
-      const entity = normalizedEntity.value;
-      switch(entity) {
-        case 'platform': return item.platform_ID
-        case 'samples': return item.sample_ID
-        case 'series': return item.series_ID
-        default: return item.id
       }
     }
 
@@ -231,20 +336,27 @@ export default {
       selectedItem.value = {}
     }
 
-    // Load data when component mounts or entity changes
-    onMounted(() => {
-      loadData()
-    })
-    
-    // reload whenever an entity changes
+    // Watchers
+    watch(limit, () => loadPage(0))
     watch(() => props.entity, () => {
-      loadData()
+      page.value = 0
+      goto.value = 1
+      loadPage(0)
     })
 
+    // Lifecycle
+    onMounted(() => loadPage(0))
+
     return {
+      // Data
       items,
+      total,
+      limit,
+      page,
       loading,
       error,
+      goto,
+      totalPages,
       showCreateForm,
       showEditForm,
       showViewModal,
@@ -252,6 +364,12 @@ export default {
       formData,
       normalizedEntity,
       entityDisplayName,
+      
+      // Methods
+      loadPage,
+      nextPage,
+      prevPage,
+      goToInput,
       refreshData,
       viewItem,
       editItem,
@@ -270,6 +388,7 @@ export default {
   border-radius: 20px;
   padding: 2rem;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  font-family: system-ui, sans-serif;
 }
 
 .list-header {
@@ -292,6 +411,112 @@ export default {
   gap: 0.5rem;
 }
 
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-secondary:hover {
+  background: #edf2f7;
+}
+
+.btn-pagination {
+  background: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  background: #edf2f7;
+}
+
+.btn-pagination:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.data-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.meta {
+  margin-bottom: 0.5rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.data-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pagination {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 1rem 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.page-goto {
+  margin-left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.page-input {
+  width: 60px;
+  padding: 0.3rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.per-page {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.limit-select {
+  padding: 0.3rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: white;
+}
+
 .loading, .error, .empty-state {
   text-align: center;
   padding: 2rem;
@@ -303,12 +528,13 @@ export default {
   color: #e53e3e;
   background: #fed7d7;
   border-radius: 8px;
+  margin-bottom: 1rem;
 }
 
-.data-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+.empty-state {
+  background: #f7fafc;
+  border-radius: 8px;
+  color: #4a5568;
 }
 
 @media (max-width: 768px) {
@@ -318,6 +544,17 @@ export default {
   }
   
   .list-actions {
+    justify-content: center;
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .page-goto,
+  .per-page {
+    margin: 0;
     justify-content: center;
   }
 }
