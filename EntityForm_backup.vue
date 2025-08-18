@@ -1,12 +1,8 @@
-<!-- components/EntityForm.vue -->
+<!-- components/EntityFormModal.vue -->
 <template>
-  <div v-if="show" class="modal-overlay" @click.self="$emit('cancel')">
+  <div v-if="show" class="modal-overlay">
     <div class="modal-content form-modal">
-      <div class="modal-header">
-        <h2>{{ isEdit ? 'Edit' : 'Create' }} {{ entityDisplayName }}</h2>
-        <button class="close-btn" @click="$emit('cancel')">×</button>
-      </div>
-      
+      <h2>{{ isEdit ? 'Edit' : 'Create' }} {{ entityDisplayName }}</h2>
       <form @submit.prevent="handleSubmit">
         <!-- Platform Fields -->
         <template v-if="entity === 'platform'">
@@ -44,7 +40,7 @@
             <label for="technology">Technology:</label>
             <input
               id="technology"
-              v-model="localFormData.technology"
+              v-model="localFormData.organism"
               type="text"
               class="form-input"
             >
@@ -223,7 +219,7 @@ export default {
   emits: ['submit', 'cancel'],
   setup(props, { emit }) {
     const localFormData = reactive({
-      // Platform fields
+      // Platform fields ----------------------------> add all fields here
       platform_ID: '',
       title: '',
       organism: '',
@@ -247,11 +243,9 @@ export default {
 
     // Watch for changes in formData prop and update local form data
     watch(() => props.formData, (newData) => {
-        if (newData && typeof newData === 'object') {
-          Object.keys(localFormData).forEach(key => {
-            localFormData[key] = newData[key] || ''
-          })
-        }
+        Object.keys(localFormData).forEach(key => {
+        localFormData[key] = newData[key] || ''
+        })
     }, { deep: true, immediate: true })
 
     // Reset form when modal is closed
@@ -264,17 +258,7 @@ export default {
     })
 
     const handleSubmit = () => {
-      // Create clean data object, removing empty fields for updates
-      const submitData = {}
-      Object.keys(localFormData).forEach(key => {
-        const value = localFormData[key]
-        if (value !== '' && value !== null && value !== undefined) {
-          submitData[key] = value
-        }
-      })
-      
-      console.log('Form submission data:', submitData)
-      emit('submit', submitData)
+      emit('submit', { ...localFormData })
     }
 
     return {
@@ -287,63 +271,9 @@ export default {
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-}
-
 .form-modal {
   width: 100%;
   max-width: 500px;
-  margin: 1rem;
-  padding: 2rem;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.modal-header h2 {
-  margin: 0;
-  color: #2d3748;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #999;
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.close-btn:hover {
-  color: #666;
 }
 
 .form-group {
@@ -364,19 +294,11 @@ export default {
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.3s ease;
-  box-sizing: border-box;
 }
 
 .form-input:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-input:disabled {
-  background-color: #f7fafc;
-  color: #a0aec0;
-  cursor: not-allowed;
 }
 
 .form-actions {
@@ -384,47 +306,5 @@ export default {
   gap: 1rem;
   justify-content: flex-end;
   margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-secondary {
-  background: #f7fafc;
-  color: #4a5568;
-  border: 1px solid #e2e8f0;
-}
-
-.btn-secondary:hover {
-  background: #edf2f7;
-}
-
-@media (max-width: 768px) {
-  .form-modal {
-    margin: 0.5rem;
-    padding: 1.5rem;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
 }
 </style>

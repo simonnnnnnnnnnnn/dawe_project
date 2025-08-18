@@ -273,89 +273,57 @@ export default {
     }
 
     const editItem = (item) => {
-      console.log('Editing item:', item)
       selectedItem.value = item
-      
       // Reset form data
       Object.keys(formData).forEach(key => {
         formData[key] = ''
       })
-      
-      // Populate with item data more carefully
+      // Populate with item data
       Object.keys(item).forEach(key => {
         if (formData.hasOwnProperty(key)) {
-          if (key === 'characteristics' && item[key] && typeof item[key] === 'object') {
-            // Handle JSON fields
-            formData[key] = JSON.stringify(item[key], null, 2)
-          } else {
-            formData[key] = item[key] || ''
-          }
+          formData[key] = item[key] || ''
         }
       })
-      
-      console.log('Form data populated:', formData)
+      // Handle JSON fields
+      if (item.characteristics && typeof item.characteristics === 'object') {
+        formData.characteristics = JSON.stringify(item.characteristics)
+      }
       showEditForm.value = true
     }
 
     const deleteItem = async (item) => {
-      console.log('Attempting to delete item:', item)
       const idField = getIdField(item)
-      console.log('Using ID field:', idField, 'for entity:', normalizedEntity.value)
-      
-      if (!idField) {
-        error.value = `Cannot delete ${normalizedEntity.value}: No valid ID found`
-        return
-      }
-      
       if (confirm(`Are you sure you want to delete this ${normalizedEntity.value}?`)) {
         try {
           await api.deleteOne(normalizedEntity.value, idField)
-          console.log(`Successfully deleted ${normalizedEntity.value} with ID:`, idField)
           await refreshData()
         } catch (err) {
-          console.error('Delete error:', err)
-          error.value = `Failed to delete ${normalizedEntity.value}: ${err.response?.data?.error || err.message}`
+          error.value = `Failed to delete ${normalizedEntity.value}: ${err.message}`
         }
       }
     }
 
     const submitForm = async (data) => {
-      console.log('Submitting form data:', data)
-      console.log('Is edit mode:', showEditForm.value)
-      console.log('Selected item:', selectedItem.value)
-      
       try {
         // Handle JSON parsing for characteristics
-        if (data.characteristics && typeof data.characteristics === 'string') {
+        if (data.characteristics) {
           try {
             data.characteristics = JSON.parse(data.characteristics)
           } catch (e) {
-            console.warn('Failed to parse characteristics as JSON, keeping as string:', e)
             // If parsing fails, keep as string
           }
         }
 
         if (showCreateForm.value) {
-          console.log('Creating new', normalizedEntity.value)
           await api.createOne(normalizedEntity.value, data)
-        } else if (showEditForm.value) {
+        } else {
           const idField = getIdField(selectedItem.value)
-          console.log('Updating', normalizedEntity.value, 'with ID:', idField)
-          
-          if (!idField) {
-            throw new Error('No valid ID found for update operation')
-          }
-          
           await api.updateOne(normalizedEntity.value, idField, data)
         }
-        
         cancelForm()
         await refreshData()
-        console.log('Form submission successful')
       } catch (err) {
-        console.error('Form submission error:', err)
-        const action = showCreateForm.value ? 'create' : 'update'
-        error.value = `Failed to ${action} ${normalizedEntity.value}: ${err.response?.data?.error || err.message}`
+        error.value = `Failed to ${showCreateForm.value ? 'create' : 'update'} ${normalizedEntity.value}: ${err.message}`
       }
     }
 

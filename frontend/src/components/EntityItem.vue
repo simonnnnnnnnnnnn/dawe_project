@@ -44,7 +44,7 @@ export default {
     const getIdField = () => {
       switch(props.entity) {
         case 'platform': return props.item.platform_ID
-        case 'sample': return props.item.sample_ID  
+        case 'sample': return props.item.sample_ID
         case 'series': return props.item.series_ID
         default: return props.item.id
       }

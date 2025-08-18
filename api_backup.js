@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({baseURL: 'http://localhost:8282'});
 
-// Handle both plural routes for fetching lists and singular routes for individual operations
+// just like in the server, deal with the plurals
 const getPluralRoute = (entity) => {
     const pluralMap = {
         platform: 'platforms',
@@ -13,49 +13,27 @@ const getPluralRoute = (entity) => {
     return pluralMap[entity] || `${entity}s`;
 };
 
-// Get the correct route for singular operations (create, read one, update, delete)
-const getSingularRoute = (entity) => {
-    const singularMap = {
-        platform: 'platform',
-        samples: 'samples',  // Keep as samples since server uses /samples/:sample_ID
-        series: 'series',
-        sample: 'samples'    // Map sample to samples for singular operations
-    };
-    return singularMap[entity] || entity;
-};
 
-// Standard CRUD functions
-// Get all --> uses plural routes
+// once again the standard crud functions
+// get all --> now woth the plurals
 export const fetchAll = (entity, params = {}) => {
     const pluralRoute = getPluralRoute(entity);
     return api.get(`/${pluralRoute}`, {params});
 };
+// get one
+export const fetchOne = (entity, id) => api.get(`/${entity}/${id}`);
 
-// Get one --> uses singular routes
-export const fetchOne = (entity, id) => {
-    const singularRoute = getSingularRoute(entity);
-    return api.get(`/${singularRoute}/${id}`);
-};
+//create
+export const createOne = (entity, data) => api.post(`/${entity}`, data);
 
-// Create --> uses singular routes
-export const createOne = (entity, data) => {
-    const singularRoute = getSingularRoute(entity);
-    return api.post(`/${singularRoute}`, data);
-};
+//update
+export const updateOne = (entity, id, data) => api.put(`/${entity}/${id}`, data);
 
-// Update --> uses singular routes
-export const updateOne = (entity, id, data) => {
-    const singularRoute = getSingularRoute(entity);
-    return api.put(`/${singularRoute}/${id}`, data);
-};
+// and finally delete
+export const deleteOne = (entity, id) => api.delete(`/${entity}/${id}`);
 
-// Delete --> uses singular routes
-export const deleteOne = (entity, id) => {
-    const singularRoute = getSingularRoute(entity);
-    return api.delete(`/${singularRoute}/${id}`);
-};
 
-// All the extra relationships remain the same
+// now all the extra relationships
 // get the array corresponding to the platform
 export const getPlatformArray = (platformId) => api.get(`/platform/${platformId}/platform_array`);
 
