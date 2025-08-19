@@ -40,13 +40,33 @@ export const fetchOne = (entity, id) => {
 // Create --> uses singular routes
 export const createOne = (entity, data) => {
     const singularRoute = getSingularRoute(entity);
-    return api.post(`/${singularRoute}`, data);
+    
+    // Handle JSON fields for MySQL
+    const processedData = { ...data };
+    if (entity === 'sample' && processedData.characteristics) {
+        // Ensure characteristics is a string for MySQL JSON column
+        if (typeof processedData.characteristics === 'object') {
+            processedData.characteristics = JSON.stringify(processedData.characteristics);
+        }
+    }
+    
+    return api.post(`/${singularRoute}`, processedData);
 };
 
 // Update --> uses singular routes
 export const updateOne = (entity, id, data) => {
     const singularRoute = getSingularRoute(entity);
-    return api.put(`/${singularRoute}/${id}`, data);
+    
+    // Handle JSON fields for MySQL
+    const processedData = { ...data };
+    if (entity === 'sample' && processedData.characteristics) {
+        // Ensure characteristics is a string for MySQL JSON column
+        if (typeof processedData.characteristics === 'object') {
+            processedData.characteristics = JSON.stringify(processedData.characteristics);
+        }
+    }
+    
+    return api.put(`/${singularRoute}/${id}`, processedData);
 };
 
 // Delete --> uses singular routes

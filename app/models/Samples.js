@@ -22,10 +22,25 @@ class Samples extends Crud_Basics{
             }
         }
         if (record.characteristics !== undefined){
-            if (record.characteristics !== 'object' || record.characteristics === null || Array.isArray(record.characteristics)){
-                throw new Error("characteristics must be a valid JSON object");
+            if (typeof record.characteristics === 'string'){
+                if (record.characteristics.trim() === ''){
+                    recoord.characteristics = null;
+                } else{
+                    try{
+                        const parsed = JSON.parse(record.characteristics);
+                    } catch (e) {
+                        throw new Error("characteristics must be a valid JSON string");
+                    }
+
+                }
+            } else if (typeof record.characteristics === 'object' && record.characteristics !== null && Array.isArray(record.characteristics)){
+                // if object  stringify for mySQL
+                record.characteristics = JSON.stringify(record.characteristics);
+            } else if (typeof record.characteristics !== null){
+                throw new Error("characteristics must be a valid JSON object or string");
             }
         }
+        
         for (const datefield of ['created_at', 'updated_at']){
             if (record[datefield] !== undefined && !this._isvaliddate(record[datefield])){
                 throw new Error(`${datefield} is not a valid date-string`);

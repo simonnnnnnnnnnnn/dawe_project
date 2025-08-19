@@ -284,16 +284,31 @@ export default {
       // Populate with item data more carefully
       Object.keys(item).forEach(key => {
         if (formData.hasOwnProperty(key)) {
-          if (key === 'characteristics' && item[key] && typeof item[key] === 'object') {
-            // Handle JSON fields
-            formData[key] = JSON.stringify(item[key], null, 2)
+          if (key === 'characteristics'){
+            // special handling of json fields as that was the thing causing problems
+            if (item[key] === null || item[key] === undefined){
+              formData[key] = '';
+            }else if (typeof item[key] === 'object'){
+              // if already objec, stringify ofr displyaing
+              formData[key] = JSON.stringify(item[key], null, 2);
+            } else if (typeof item[key] === 'string'){
+              try{
+                const parsed = JSON.parse(item[key]);
+                formData[key] = JSON.stringify(parsed, null, 2);
+              } catch (e) {
+                formData[key] = item[key]; // fallback to original string if parsing fails
+              }
+            } else{
+              // other types
+              formData[key] = String(item[key]);
+            }
           } else {
-            formData[key] = item[key] || ''
+            formData[key] = item[key] || '';
           }
         }
       })
-      
-      console.log('Form data populated:', formData)
+
+      console.log('Form data populated for edit:', formData)
       showEditForm.value = true
     }
 
@@ -325,19 +340,33 @@ export default {
       console.log('Selected item:', selectedItem.value)
       
       try {
-        // Handle JSON parsing for characteristics
-        if (data.characteristics && typeof data.characteristics === 'string') {
-          try {
-            data.characteristics = JSON.parse(data.characteristics)
-          } catch (e) {
-            console.warn('Failed to parse characteristics as JSON, keeping as string:', e)
-            // If parsing fails, keep as string
+        // i just hope this more robust variation does the job now
+        const submitData = { ...data};
+
+        // now handle json for the characteristics field
+        if(submitData.characteristics !== undefined){
+          if (typeof submitData.characteristics === 'string') {
+            if (submitData.characteristics.trim() === ''){
+              delete submitData.characteristics;
+            }else{
+              try{
+                // now validate by parsing and stringifying, that may not be super clean, but it should do the job
+                const parsed = JSON.parse(submitData.characteristics);
+                submitData.characteristics = JSON.stringify(parsed);
+              } catch (e) {
+                throw new Error(`Invalid json in characteristics filed of samples: ${e.message}`);
+              }
+            }
+          } else if (typeof submitData.characteristics === 'object' && submitData.characteristics !== null) {
+            // if object, make a string out of it
+            submitData.characteristics = JSON.stringify(submitData.characteristics);
           }
         }
+        console.log(`processed submitted data:`, submitData);
 
-        if (showCreateForm.value) {
+        if (showCreateForm.value){
           console.log('Creating new', normalizedEntity.value)
-          await api.createOne(normalizedEntity.value, data)
+          await api.createOne(normalizedEntity.value, submitData)
         } else if (showEditForm.value) {
           const idField = getIdField(selectedItem.value)
           console.log('Updating', normalizedEntity.value, 'with ID:', idField)
@@ -346,9 +375,9 @@ export default {
             throw new Error('No valid ID found for update operation')
           }
           
-          await api.updateOne(normalizedEntity.value, idField, data)
+          await api.updateOne(normalizedEntity.value, idField, submitData)
         }
-        
+
         cancelForm()
         await refreshData()
         console.log('Form submission successful')
