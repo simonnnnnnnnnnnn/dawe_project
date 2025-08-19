@@ -46,7 +46,7 @@ CREATE TABLE samples (
     protocol     TEXT,
     created_at   DATE,
     updated_at   DATE,
-    platform_ID  VARCHAR(50) NOT NULL,
+    platform_ID  VARCHAR(50),
     FOREIGN KEY (platform_ID) REFERENCES platform(platform_ID) ON DELETE SET NULL
 );
 
@@ -76,8 +76,8 @@ CREATE TABLE series_samples (
     series_ID  VARCHAR(50) NOT NULL,
     sample_ID  VARCHAR(50) NOT NULL,
     PRIMARY KEY (series_ID, sample_ID),
-    FOREIGN KEY (series_ID) REFERENCES series(series_ID),
-    FOREIGN KEY (sample_ID) REFERENCES samples(sample_ID)
+    FOREIGN KEY (series_ID) REFERENCES series(series_ID) on delete cascade,
+    FOREIGN KEY (sample_ID) REFERENCES samples(sample_ID) on delete cascade
 );
 
 -- --------------------------------------------------
