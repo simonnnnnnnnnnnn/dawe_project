@@ -81,10 +81,12 @@
     <EntityForm
       :show="showCreateForm || showEditForm"
       :entity="normalizedEntity"
-      :is-edit="showEditForm"
-      :form-data="formData"
-      @submit="submitForm"
-      @cancel="cancelForm"
+      :isEdit="isEdit"
+      :formData="formData"
+      :arrayData="arrayData"
+      @cancel="closeForm"
+      @success="handleFormSuccess"
+      @error="handleFormError"
     />
 
     <!-- View Details Modal -->
@@ -103,6 +105,7 @@ import * as api from '../api.js'
 import EntityDetailView from './EntityDetailView.vue'
 import EntityForm from './EntityForm.vue'
 import EntityItem from './EntityItem.vue'
+//import { response } from 'express'
 
 export default {
   name: 'EntityList',
@@ -157,6 +160,8 @@ export default {
       supplementary_data_link: ''
     })
 
+    const arrayData = ref([])
+
     // Computed properties
     const currentOffset = computed(() => page.value * limit.value)
 
@@ -182,6 +187,8 @@ export default {
       return entity.charAt(0).toUpperCase() + entity.slice(1)
     })
 
+    const isEdit = computed(() => showEditForm.value)
+
     // Helper functions
     const getIdField = (item) => {
       const entity = normalizedEntity.value
@@ -198,7 +205,7 @@ export default {
     }
 
     // Data loading with pagination
-    const loadPage = async (p = page.value) => {
+    const loadData = async (p = page.value) => {
       loading.value = true
       error.value = null
       
@@ -209,9 +216,9 @@ export default {
         page.value = p
         goto.value = page.value + 1
 
-        const params = { 
-          limit: limit.value, 
-          offset: currentOffset.value 
+        const params = {
+          limit: limit.value,
+          offset: currentOffset.value
         }
 
         console.log(`Loading page ${p + 1} for entity: ${normalizedEntity.value}`, params)
@@ -248,22 +255,41 @@ export default {
       }
     }
 
+    const loadArrayData = async () => {
+      try{
+        const entity = normalizedEntity.value
+        const itemId = getIdField(selectedItem.value)
+        if (entity === 'platform'){
+          const response = await api.getPlatformArray(itemId)
+          arrayData.value = response.data || []
+        } else if (entity === 'sample'){
+          const response = await api.getSampleArray(itemId)
+          arrayData.value = response.data || []
+        } else {
+          arrayData.value = []
+        }
+      } catch (err) {
+        console.warn('Failed to load array data:', err)
+        arrayData.value = []
+      }
+    }
+
     // Pagination controls
     const nextPage = () => {
-      if ((page.value + 1) < totalPages.value) loadPage(page.value + 1)
+      if ((page.value + 1) < totalPages.value) loadData(page.value + 1)
     }
 
     const prevPage = () => {
-      if (page.value > 0) loadPage(page.value - 1)
+      if (page.value > 0) loadData(page.value - 1)
     }
 
     const goToInput = () => {
       const target = Math.min(Math.max(1, Number(goto.value || 1)), totalPages.value)
-      loadPage(target - 1)
+      loadData(target - 1)
     }
 
     const refreshData = () => {
-      loadPage(page.value)
+      loadData(page.value)
     }
 
     // CRUD operations
@@ -307,8 +333,10 @@ export default {
           }
         }
       })
+      loadArrayData(item)
 
       console.log('Form data populated for edit:', formData)
+      console.log('array data loaded :', arrayData.value)
       showEditForm.value = true
     }
 
@@ -334,6 +362,29 @@ export default {
       }
     }
 
+    //neue event handler --> hoffentlich klappts mit denen
+    const handleFormSuccess = async (data) => {
+      console.log(`${data.entity} saved successfully`)
+      closeForm()
+      await loadData()
+    }
+
+    const handleFormError = (data) => {
+      console.error(`Error saving ${data.entity}:`, data.error)
+      error.value = `Failed to save ${data.entity}: ${data.error?.response?.data?.error || data.error.message || 'Unknown error'}`
+    }
+
+    const closeForm = () => {
+      showCreateForm.value = false
+      showEditForm.value = false
+      selesctedItem.value = {}
+      arrayData.value = []
+      Object.keys(formData).forEach(key => {
+        formData[key] = ''
+      })
+    }
+
+    /*
     const submitForm = async (data) => {
       console.log('Submitting form data:', data)
       console.log('Is edit mode:', showEditForm.value)
@@ -395,18 +446,30 @@ export default {
         formData[key] = ''
       })
       selectedItem.value = {}
-    }
+    }*/
+
+    /*
+    const handleFormSuccess = (data) => {
+      console.log(`${data.entity} saved`)
+      closeForm()
+      loadData()
+    }*/
+
+    /*
+    const handleFormError = (data) => {
+      console.error(`error saving ${data.entity}:`)
+    }*/
 
     // Watchers
-    watch(limit, () => loadPage(0))
+    watch(limit, () => loadData(0))
     watch(() => props.entity, () => {
       page.value = 0
       goto.value = 1
-      loadPage(0)
+      loadData(0)
     })
 
     // Lifecycle
-    onMounted(() => loadPage(0))
+    onMounted(() => loadData(0))
 
     return {
       // Data
@@ -423,11 +486,13 @@ export default {
       showViewModal,
       selectedItem,
       formData,
+      arrayData,
       normalizedEntity,
       entityDisplayName,
+      isEdit,
       
       // Methods
-      loadPage,
+      loadData,
       nextPage,
       prevPage,
       goToInput,
@@ -435,8 +500,9 @@ export default {
       viewItem,
       editItem,
       deleteItem,
-      submitForm,
-      cancelForm,
+      handleFormError,
+      handleFormSuccess,
+      closeForm,
       getItemKey
     }
   }

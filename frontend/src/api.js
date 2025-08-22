@@ -75,6 +75,110 @@ export const deleteOne = (entity, id) => {
     return api.delete(`/${singularRoute}/${id}`);
 };
 
+// some additions for handling the platform and samples arrays with the EntityForm
+// Replace the existing updatePlatformArray and updateSamplesArray functions with these:
+
+// Create or update platform array entries
+export const createPlatformArrayEntry = (data) => {
+    return api.post('/platform_array', data);
+};
+
+export const updatePlatformArrayEntry = (gbAcc, data) => {
+    return api.put(`/platform_array/${gbAcc}`, data);
+};
+
+export const deletePlatformArrayEntry = (gbAcc) => {
+    return api.delete(`/platform_array/${gbAcc}`);
+};
+
+// Create or update sample array entries  
+export const createSampleArrayEntry = (data) => {
+    return api.post('/sample_array', data);
+};
+
+export const updateSampleArrayEntry = (idRef, data) => {
+    return api.put(`/sample_array/${idRef}`, data);
+};
+
+export const deleteSampleArrayEntry = (idRef) => {
+    return api.delete(`/sample_array/${idRef}`);
+};
+
+// Helper function to manage all array entries for a platform/sample
+export const syncPlatformArrayEntries = async (platformId, newEntries) => {
+    try {
+        // First, get existing entries for this platform
+        const existingResponse = await api.get(`/platform/${platformId}/platform_array`);
+        const existingEntries = existingResponse.data || [];
+        
+        // Create maps for easier comparison
+        const existingMap = new Map(existingEntries.map(entry => [entry.gb_acc, entry]));
+        const newMap = new Map(newEntries.map(entry => [entry.gb_acc, entry]));
+        
+        const results = [];
+        
+        // Update or create entries
+        for (const [gbAcc, newEntry] of newMap) {
+            if (existingMap.has(gbAcc)) {
+                // Update existing entry
+                results.push(await updatePlatformArrayEntry(gbAcc, newEntry));
+            } else {
+                // Create new entry
+                results.push(await createPlatformArrayEntry(newEntry));
+            }
+        }
+        
+        // Delete entries that are no longer present
+        for (const [gbAcc] of existingMap) {
+            if (!newMap.has(gbAcc)) {
+                results.push(await deletePlatformArrayEntry(gbAcc));
+            }
+        }
+        
+        return results;
+    } catch (error) {
+        console.error('Error syncing platform array entries:', error);
+        throw error;
+    }
+};
+
+export const syncSampleArrayEntries = async (sampleId, newEntries) => {
+    try {
+        // First, get existing entries for this sample
+        const existingResponse = await api.get(`/samples/${sampleId}/expression`);
+        const existingEntries = existingResponse.data || [];
+        
+        // Create maps for easier comparison
+        const existingMap = new Map(existingEntries.map(entry => [entry.id_ref, entry]));
+        const newMap = new Map(newEntries.map(entry => [entry.id_ref, entry]));
+        
+        const results = [];
+        
+        // Update or create entries
+        for (const [idRef, newEntry] of newMap) {
+            if (existingMap.has(idRef)) {
+                // Update existing entry
+                results.push(await updateSampleArrayEntry(idRef, newEntry));
+            } else {
+                // Create new entry
+                results.push(await createSampleArrayEntry(newEntry));
+            }
+        }
+        
+        // Delete entries that are no longer present
+        for (const [idRef] of existingMap) {
+            if (!newMap.has(idRef)) {
+                results.push(await deleteSampleArrayEntry(idRef));
+            }
+        }
+        
+        return results;
+    } catch (error) {
+        console.error('Error syncing sample array entries:', error);
+        throw error;
+    }
+};
+
 // All the extra relationships remain the same
 // get the array corresponding to the platform
 export const getPlatformArray = (platformId) => api.get(`/platform/${platformId}/platform_array`);

@@ -145,7 +145,7 @@ export default {
 
     const arrayColumns = computed(() => {
       switch(props.entity) {
-        case 'platform': return ['gb_acc', 'spot_id', 'gene_symbol', 'gene_title', 'entrez_gene_id']
+        case 'platform': return ['id', 'gb_acc', 'spot_id', 'species_specific_name', 'annotation_data', 'sequence_type', 'target_description', 'representative_public_id', 'gene_title', 'gene_symbol', 'entrez_gene_id', 'refseq_transcript_id', 'gene_ontology_biological_process', 'gene_ontology_cellular_component', 'gene_ontology_molecular_function']
         case 'sample': return ['id_ref', 'value', 'abs_call', 'detection_p_value']
         default: return []
       }
