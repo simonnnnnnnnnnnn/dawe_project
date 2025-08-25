@@ -27,7 +27,7 @@ echo "get array for a platform"
 curl http://localhost:8282/platform/GPL400/platform_array
 echo -e "\n"
 
-# problem here
+
 echo "get samples from a platform"
 curl http://localhost:8282/platform/GPL400/samples
 echo -e "\n"
@@ -36,7 +36,7 @@ echo "get all platforms for a sample"
 curl http://localhost:8282/samples/GSM5001/platform
 echo -e "\n"
 
-# problem here
+
 echo "get the expression levels for a sample"
 curl http://localhost:8282/samples/GSM5001/expression
 echo -e "\n"
@@ -52,3 +52,19 @@ echo -e "\n"
 echo "get all samples of a series"
 curl http://localhost:8282/series/GSE1001/samples
 echo -e "\n"
+
+
+echo "start dataset/profile tests"
+echo "get all datasets"
+curl http://localhost:8282/datasets
+echo -e "\n"
+
+echo "get all profiles of a dataset"
+curl http://localhost:8282/dataset/GDS1000/profiles
+echo -e "\n"
+
+echo "get all profile arrays of a profile"
+curl http://localhost:8282/profile/PRF1000/profile_arrays
+echo -e "\n"
+
+echo "now create, update, delete functions"

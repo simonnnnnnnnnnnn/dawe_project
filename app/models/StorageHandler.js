@@ -18,7 +18,10 @@ class StorageHandler{
             samples: 'sample_ID',
             sample_array: 'id_ref',
             series: 'series_ID',
-            series_samples: ['series_ID', 'sample_ID']
+            series_samples: ['series_ID', 'sample_ID'],
+            dataset: 'dataset_ID',
+            profile: 'profile_ID',
+            profile_array: 'profile_array_ID'
         }
         this._testConnection();
         //this.my_db_file = path.resolve(my_db_file);

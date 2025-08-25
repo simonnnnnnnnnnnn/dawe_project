@@ -18,6 +18,9 @@ const Samples = require('./app/models/Samples')
 const Sample_Array = require('./app/models/Sample_Array')
 const Series = require('./app/models/Series')
 const Series_Samples = require('./app/models/Series_Samples')
+const Dataset = require('./app/models/Dataset')
+const Profile = require('./app/models/Profile')
+const Profile_Array = require('./app/models/Profile_Array')
 
 const app = express();
 
@@ -45,6 +48,9 @@ const models = {
     sample_array: new Sample_Array(db),
     series: new Series(db),
     series_samples: new Series_Samples(db),
+    dataset: new Dataset(db),
+    profile: new Profile(db),
+    profile_array: new Profile_Array(db)
 };
 
 // managing the plural forms was quite challenging so this is (hopefully) the fix for this
@@ -54,7 +60,10 @@ const pluralMap ={
     series: 'series',
     platform_array: 'platform_arrays',
     sample_array: 'sample_arrays',
-    series_samples: 'series_samples'
+    series_samples: 'series_samples',
+    dataset: 'datasets',
+    profile: 'profiles',
+    profile_array: 'profile_arrays'
 }
 
 
@@ -220,6 +229,30 @@ app.get('/series/:series_ID/samples', async (req, res) => {
     try{
         const temp_series = models.series;
         const result = await temp_series.getSamples(req.params.series_ID);
+        res.json(result);
+    }catch(err){
+        res.status(500).json({error: err.message});
+    }
+});
+
+// new realtionhips for additional tables
+
+//get all profiles for a dataset
+app.get('/dataset/:dataset_ID/profiles', async (req, res) => {
+    try{
+        const temp_dataset = models.dataset;
+        const result = await temp_dataset.getProfiles(req.params.dataset_ID);
+        res.json(result);
+    }catch(err){
+        res.status(500).json({error: err.message});
+    }
+});
+
+// get all profile arrays for a profile
+app.get('/profile/:profile_ID/profile_arrays', async (req, res) => {
+    try{
+        const temp_profile = models.profile;
+        const result = await temp_profile.getProfileArrays(req.params.profile_ID);
         res.json(result);
     }catch(err){
         res.status(500).json({error: err.message});

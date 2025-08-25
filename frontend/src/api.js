@@ -8,7 +8,9 @@ const getPluralRoute = (entity) => {
         platform: 'platforms',
         samples: 'samples',
         series: 'series',
-        sample: 'samples'
+        sample: 'samples',
+        dataset: 'datasets',
+        profile: 'profiles'
     };
     return pluralMap[entity] || `${entity}s`;
 };
@@ -19,7 +21,9 @@ const getSingularRoute = (entity) => {
         platform: 'platform',
         samples: 'samples',  // Keep as samples since server uses /samples/:sample_ID
         series: 'series',
-        sample: 'samples'    // Map sample to samples for singular operations
+        sample: 'samples',// Map sample to samples for singular operations
+        dataset: 'dataset',
+        profile: 'profile'
     };
     return singularMap[entity] || entity;
 };
@@ -104,6 +108,19 @@ export const deleteSampleArrayEntry = (idRef) => {
     return api.delete(`/sample_array/${idRef}`);
 };
 
+// now the same for profiles and profile_array
+export const createProfileArrayEntry = (data) => {
+    return api.post('/profile_array', data);
+};
+
+export const updateProfileArrayEntry = (platform_array_ID, data) => {
+    return api.put(`/profile_array/${platform_array_ID}`, data);
+};
+
+export const deleteProfileArrayEntry = (platform_array_ID) => {
+    return api.delete(`/profile_array/${platform_array_ID}`);
+};
+
 // Helper function to manage all array entries for a platform/sample
 export const syncPlatformArrayEntries = async (platformId, newEntries) => {
     try {
@@ -179,6 +196,44 @@ export const syncSampleArrayEntries = async (sampleId, newEntries) => {
     }
 };
 
+// same syncing for profile arrays
+export const syncProfileArrayEntries = async (profileId, newEntries) => {
+    try {
+        // First, get existing entries for this sample
+        const existingResponse = await api.get(`/profile/${profileId}/getProfileArrays`);
+        const existingEntries = existingResponse.data || [];
+        
+        // Create maps for easier comparison
+        const existingMap = new Map(existingEntries.map(entry => [entry.profile_array_ID, entry]));
+        const newMap = new Map(newEntries.map(entry => [entry.profile_array_ID, entry]));
+        
+        const results = [];
+        
+        // Update or create entries
+        for (const [profile_array_ID, newEntry] of newMap) {
+            if (existingMap.has(idRef)) {
+                // Update existing entry
+                results.push(await updateProfileArrayEntry(profile_array_ID, newEntry));
+            } else {
+                // Create new entry
+                results.push(await createProfileArrayEntry(newEntry));
+            }
+        }
+        
+        // Delete entries that are no longer present
+        for (const [profile_array_ID] of existingMap) {
+            if (!newMap.has(proffile)) {
+                results.push(await deleteProfileArrayEntry(profile_array_ID));
+            }
+        }
+        
+        return results;
+    } catch (error) {
+        console.error('Error syncing profile array entries:', error);
+        throw error;
+    }
+};
+
 // All the extra relationships remain the same
 // get the array corresponding to the platform
 export const getPlatformArray = (platformId) => api.get(`/platform/${platformId}/platform_array`);
@@ -200,5 +255,9 @@ export const getFullInfoOfSample = (sampleId) => api.get(`/samples/${sampleId}/f
 
 // get all samples of a series
 export const getSamplesOfSeries = (seriesId) => api.get(`/series/${seriesId}/samples`);
+
+export const getProfilesOfDataset = (datasetId) => api.get(`/dataset/${datasetId}/profiles`); // testen ob s funktioniert
+
+export const getProfileArraysOfProfile = (profileId) => api.get(`/profile/${profileId}/getProfileArrays`);
 
 export default api;
