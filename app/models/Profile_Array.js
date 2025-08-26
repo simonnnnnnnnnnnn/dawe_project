@@ -28,6 +28,9 @@ class Profile_Array extends Crud_Basics{
         }
         return true;
     }
+        _isNumber(n){
+        return typeof n === 'number' && !Number.isNaN(n);
+    }
 
 
     // model the relationships

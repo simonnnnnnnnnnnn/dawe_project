@@ -46,6 +46,8 @@ export default {
         case 'platform': return props.item.platform_ID
         case 'sample': return props.item.sample_ID
         case 'series': return props.item.series_ID
+        case 'dataset': return props.item.dataset_ID
+        case 'profile': return props.item.profile_ID
         default: return props.item.id
       }
     }

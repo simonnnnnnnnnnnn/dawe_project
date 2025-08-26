@@ -82,6 +82,7 @@ CREATE TABLE series_samples (
 
 CREATE TABLE dataset (
     dataset_ID varchar(50) PRIMARY KEY NOT NULL,
+    title TEXT,
     summary TEXT,
     organism TEXT,
     citation TEXT,
@@ -158,11 +159,11 @@ INSERT INTO series_samples VALUES
   ('GSE1003','GSM5004');
 
 -- Datasets (curated summaries) – now point to existing series
-INSERT INTO dataset (dataset_ID, summary, organism, citation, platform, reference_series, value_type, sample_count, series_published)
+INSERT INTO dataset (dataset_ID, title, summary, organism, citation, platform, reference_series, value_type, sample_count, series_published)
 VALUES
-  ('GDS1000', 'Gene expression study of human lung cancer tissue vs normal controls', 'Homo sapiens',
+  ('GDS1000', 'Gene Expression Lung Cancer', 'Gene expression study of human lung cancer tissue vs normal controls', 'Homo sapiens',
    'Smith et al., Nature 2020', 'GPL100', 'GSE1001', 'log2 expression', 2, '2023-04-03'),
-  ('GDS2000', 'Mouse heart transcriptome changes in cardiac study', 'Mus musculus',
+  ('GDS2000', 'Mouse Cardiac Study', 'Mouse heart transcriptome changes in cardiac study', 'Mus musculus',
    'Lee et al., Cell Metab 2021', 'GPL200', 'GSE1002', 'RPKM', 1, '2022-11-02');
 
 -- Profiles belonging to datasets

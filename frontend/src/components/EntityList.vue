@@ -157,7 +157,22 @@ export default {
       series_ID: '',
       summary: '',
       overall_design: '',
-      supplementary_data_link: ''
+      supplementary_data_link: '',
+      // dataset fields
+      dataset_ID: '',
+      title: '',
+      summary: '',
+      organism: '',
+      platform: '',
+      citation: '',
+      reference_series: '',
+      value_type: '',
+      sample_count: null,
+      series_published: '',
+      // profile filds
+      profile_ID: '',
+      title: '',
+      organism: ''
     })
 
     const arrayData = ref([])
@@ -177,7 +192,11 @@ export default {
         'samples': 'sample',
         'series': 'series',
         'platform': 'platform',
-        'sample': 'sample'
+        'sample': 'sample',
+        'dataset': 'dataset',
+        'datasets': 'dataset',
+        'profile': 'profile',
+        'profiles': 'profile'
       }
       return entityMap[props.entity.toLowerCase()] || props.entity
     })
@@ -196,6 +215,8 @@ export default {
         case 'platform': return item.platform_ID
         case 'sample': return item.sample_ID
         case 'series': return item.series_ID
+        case 'profile': return item.profile_ID
+        case 'dataset': return item.dataset_ID
         default: return item.id
       }
     }
@@ -264,6 +285,9 @@ export default {
           arrayData.value = response.data || []
         } else if (entity === 'sample'){
           const response = await api.getSampleArray(itemId)
+          arrayData.value = response.data || []
+        } else if (entity === 'profile'){
+          const response = await api.getProfileArraysOfProfile(itemId)
           arrayData.value = response.data || []
         } else {
           arrayData.value = []
@@ -377,88 +401,14 @@ export default {
     const closeForm = () => {
       showCreateForm.value = false
       showEditForm.value = false
-      selesctedItem.value = {}
+      selectedItem.value = {}
       arrayData.value = []
       Object.keys(formData).forEach(key => {
         formData[key] = ''
       })
     }
 
-    /*
-    const submitForm = async (data) => {
-      console.log('Submitting form data:', data)
-      console.log('Is edit mode:', showEditForm.value)
-      console.log('Selected item:', selectedItem.value)
-      
-      try {
-        // i just hope this more robust variation does the job now
-        const submitData = { ...data};
 
-        // now handle json for the characteristics field
-        if(submitData.characteristics !== undefined){
-          if (typeof submitData.characteristics === 'string') {
-            if (submitData.characteristics.trim() === ''){
-              delete submitData.characteristics;
-            }else{
-              try{
-                // now validate by parsing and stringifying, that may not be super clean, but it should do the job
-                const parsed = JSON.parse(submitData.characteristics);
-                submitData.characteristics = JSON.stringify(parsed);
-              } catch (e) {
-                throw new Error(`Invalid json in characteristics filed of samples: ${e.message}`);
-              }
-            }
-          } else if (typeof submitData.characteristics === 'object' && submitData.characteristics !== null) {
-            // if object, make a string out of it
-            submitData.characteristics = JSON.stringify(submitData.characteristics);
-          }
-        }
-        console.log(`processed submitted data:`, submitData);
-
-        if (showCreateForm.value){
-          console.log('Creating new', normalizedEntity.value)
-          await api.createOne(normalizedEntity.value, submitData)
-        } else if (showEditForm.value) {
-          const idField = getIdField(selectedItem.value)
-          console.log('Updating', normalizedEntity.value, 'with ID:', idField)
-          
-          if (!idField) {
-            throw new Error('No valid ID found for update operation')
-          }
-          
-          await api.updateOne(normalizedEntity.value, idField, submitData)
-        }
-
-        cancelForm()
-        await refreshData()
-        console.log('Form submission successful')
-      } catch (err) {
-        console.error('Form submission error:', err)
-        const action = showCreateForm.value ? 'create' : 'update'
-        error.value = `Failed to ${action} ${normalizedEntity.value}: ${err.response?.data?.error || err.message}`
-      }
-    }
-
-    const cancelForm = () => {
-      showCreateForm.value = false
-      showEditForm.value = false
-      Object.keys(formData).forEach(key => {
-        formData[key] = ''
-      })
-      selectedItem.value = {}
-    }*/
-
-    /*
-    const handleFormSuccess = (data) => {
-      console.log(`${data.entity} saved`)
-      closeForm()
-      loadData()
-    }*/
-
-    /*
-    const handleFormError = (data) => {
-      console.error(`error saving ${data.entity}:`)
-    }*/
 
     // Watchers
     watch(limit, () => loadData(0))

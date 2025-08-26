@@ -200,7 +200,7 @@ export const syncSampleArrayEntries = async (sampleId, newEntries) => {
 export const syncProfileArrayEntries = async (profileId, newEntries) => {
     try {
         // First, get existing entries for this sample
-        const existingResponse = await api.get(`/profile/${profileId}/getProfileArrays`);
+        const existingResponse = await api.get(`/profile/${profileId}/profile_arrays`);
         const existingEntries = existingResponse.data || [];
         
         // Create maps for easier comparison
@@ -211,7 +211,7 @@ export const syncProfileArrayEntries = async (profileId, newEntries) => {
         
         // Update or create entries
         for (const [profile_array_ID, newEntry] of newMap) {
-            if (existingMap.has(idRef)) {
+            if (existingMap.has(profile_array_ID)) {
                 // Update existing entry
                 results.push(await updateProfileArrayEntry(profile_array_ID, newEntry));
             } else {
@@ -222,7 +222,7 @@ export const syncProfileArrayEntries = async (profileId, newEntries) => {
         
         // Delete entries that are no longer present
         for (const [profile_array_ID] of existingMap) {
-            if (!newMap.has(proffile)) {
+            if (!newMap.has(profile_array_ID)) {
                 results.push(await deleteProfileArrayEntry(profile_array_ID));
             }
         }
@@ -258,6 +258,6 @@ export const getSamplesOfSeries = (seriesId) => api.get(`/series/${seriesId}/sam
 
 export const getProfilesOfDataset = (datasetId) => api.get(`/dataset/${datasetId}/profiles`); // testen ob s funktioniert
 
-export const getProfileArraysOfProfile = (profileId) => api.get(`/profile/${profileId}/getProfileArrays`);
+export const getProfileArraysOfProfile = (profileId) => api.get(`/profile/${profileId}/profile_arrays`);
 
 export default api;

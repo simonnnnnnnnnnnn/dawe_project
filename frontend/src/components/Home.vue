@@ -22,6 +22,14 @@ export default{
                 <span class="btn-icon">📊</span>
                 <span class="btn-text">Series</span>
             </button>
+            <button @click="$emit('load-data', 'dataset')" class="main-btn series-btn">
+                <span class="btn-icon">🗂️</span>
+                <span class="btn-text">Dataset</span>
+            </button>
+            <button @click="$emit('load-data', 'profile')" class="main-btn series-btn">
+                <span class="btn-icon">🧬</span>
+                <span class="btn-text">Profile</span>
+            </button>
         </div>
     </div>
 </template>

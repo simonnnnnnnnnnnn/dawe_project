@@ -261,6 +261,84 @@
           </div>
         </template>
 
+        <!-- Profile Fields -->
+        <template v-if="entity === 'profile'">
+          <div class="form-group">
+            <label for="profile_ID">Platform ID:</label>
+            <input 
+              id="profile_ID" 
+              v-model="localFormData.profile_ID" 
+              type="text" 
+              class="form-input" 
+              :disabled="isEdit"
+              required
+            >
+          </div>
+          <div class="form-group">
+            <label for="title">Title:</label>
+            <input 
+              id="title" 
+              v-model="localFormData.title" 
+              type="text" 
+              class="form-input" 
+              required
+            >
+          </div>
+          <div class="form-group">
+            <label for="organism">Organism:</label>
+            <input 
+              id="organism" 
+              v-model="localFormData.organism"
+              type="text" 
+              class="form-input"
+            >
+          </div>
+
+          <!-- Profile Array Data Section -->
+          <div class="array-section">
+            <div class="section-header">
+              <h3>Profile Array Data</h3>
+              <button type="button" @click="addArrayEntry" class="btn btn-secondary btn-small">
+                Add Entry
+              </button>
+            </div>
+            
+            <div v-if="localArrayData.length > 0" class="array-entries">
+              <div v-for="(entry, index) in localArrayData" :key="index" class="array-entry">
+                <div class="array-entry-header">
+                  <h4>Entry {{ index + 1 }}</h4>
+                  <button type="button" @click="removeArrayEntry(index)" class="btn btn-danger btn-small">
+                    Remove
+                  </button>
+                </div>
+                
+                <div class="array-fields">
+                  <div class="form-group">
+                    <label>Profile Array ID:</label>
+                    <input v-model="entry.profile_array_ID" type="text" class="form-input" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Sample ID:</label>
+                    <input v-model="entry.sample_ID" type="text" class="form-input" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Title:</label>
+                    <input v-model="entry.title" type="text" class="form-input">
+                  </div>
+                  <div class="form-group">
+                    <label>Value:</label>
+                    <input v-model="entry.value_number" type="number" step="any" class="form-input">
+                  </div>
+                  <div class="form-group">
+                    <label>Rank</label>
+                    <input v-model="entry.ranking" type="number" step="any" class="form-input">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
         <!-- Series Fields -->
         <template v-if="entity === 'series'">
           <div class="form-group">
@@ -313,6 +391,104 @@
           </div>
         </template>
 
+        <!-- Dataset Fields -->
+        <template v-if="entity === 'dataset'">
+          <div class="form-group">
+            <label for="dataset_ID">Dataset ID:</label>
+            <input 
+              id="dataset_ID" 
+              v-model="localFormData.dataset_ID"
+              type="text" 
+              class="form-input" 
+              :disabled="isEdit"
+              required
+            >
+          </div>
+          <div class="form-group">
+            <label for="title">Title:</label>
+            <input 
+              id="title" 
+              v-model="localFormData.title"
+              type="text" 
+              class="form-input" 
+              required
+            >
+          </div>
+          <div class="form-group">
+            <label for="summary">Summary:</label>
+            <textarea 
+              id="summary" 
+              v-model="localFormData.summary"
+              class="form-input"
+              rows="3"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="organism">Organism:</label>
+            <input
+              id="organism"
+              v-model="localFormData.organism"
+              type="text"
+              class="form-input"
+            >
+          </div>
+          <div class="form-group">
+            <label for="platform">Platform:</label>
+            <input 
+              id="platform" 
+              v-model="localFormData.platform"
+              type="text" 
+              class="form-input"
+            >
+          </div>
+          <div class="form-group">
+            <label for="citation">Citation:</label>
+            <input 
+              id="citation" 
+              v-model="localFormData.citation"
+              type="text" 
+              class="form-input"
+            >
+          </div>
+          <div class="form-group">
+            <label for="reference_series">Reference Series:</label>
+            <input 
+              id="reference_series" 
+              v-model="localFormData.reference_series"
+              type="text" 
+              class="form-input"
+            >
+          </div>
+          <div class="form-group">
+            <label for="value_type">Value Type:</label>
+            <input 
+              id="value_type" 
+              v-model="localFormData.value_type"
+              type="text" 
+              class="form-input"
+            >
+          </div>
+          <div class="form-group">
+            <label for="sample_count">Sample Count:</label>
+            <input 
+              id="sample_count" 
+              v-model="localFormData.sample_count"
+              type="number" 
+              step="any"
+              class="form-input"
+            >
+          </div>
+          <div class="form-group">
+            <label for="series_published">Series Published:</label>
+            <input 
+              id="series_published" 
+              v-model="localFormData.series_published"
+              type="text" 
+              class="form-input"
+            >
+          </div>
+        </template>
+
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">
             {{ isEdit ? 'Update' : 'Create' }}
@@ -327,7 +503,7 @@
 </template>
 
 <script>
-import { createOne, updateOne, syncPlatformArrayEntries, syncSampleArrayEntries } from '@/api'
+import { createOne, updateOne, syncPlatformArrayEntries, syncSampleArrayEntries, syncProfileArrayEntries } from '@/api'
 import { computed, reactive, ref, watch } from 'vue'
 
 export default {
@@ -372,7 +548,23 @@ export default {
       series_ID: '',
       summary: '',
       overall_design: '',
-      supplementary_data_link: ''
+      supplementary_data_link: '',
+      // Dataset Fileds
+      dataset_ID: '',
+      title: '',
+      summary: '',
+      organism: '',
+      platform: '',
+      citation: '',
+      reference_series: '',
+      value_type: '',
+      sample_count: '',
+      series_published: '',
+      // profile fields
+      profile_ID: '',
+      title: '',
+      organism: ''
+
     })
 
     const localArrayData = ref([])
@@ -406,11 +598,21 @@ export default {
       detection_p_value: null
     })
 
+    const createEmptyProfileArrayEntry = () => ({
+      profile_array_ID: '',
+      sample_ID: '',
+      title: '',
+      value_number: null,
+      ranking: null,
+    })
+
     const addArrayEntry = () => {
       if (props.entity === 'platform') {
         localArrayData.value.push(createEmptyPlatformArrayEntry())
       } else if (props.entity === 'sample') {
         localArrayData.value.push(createEmptySampleArrayEntry())
+      } else if (props.entity === 'profile'){
+        localArrayData.value.push(createEmptyProfileArrayEntry())
       }
     }
 
@@ -595,6 +797,8 @@ export default {
             cleanEntry.platform_ID = submitData.platform_ID
           } else if (props.entity === 'sample' && submitData.sample_ID) {
             cleanEntry.sample_ID = submitData.sample_ID
+          } else if (props.entity === 'profile' && submitData.profile_ID){
+            cleanEntry.profile_ID = submitData.profile_ID
           }
           return cleanEntry
         }).filter(entry => Object.keys(entry).length > 1) // Remove empty entries
@@ -628,6 +832,23 @@ export default {
             await updateOne('series', submitData.series_ID, submitData)
           } else {
             await createOne('series', submitData)
+          }
+        } else if (props.entity === 'dataset'){
+          if (props.isEdit){
+            await updateOne('dataset', submitData.dataset_ID, submitData)
+          } else{
+            await createOne('dataset', submitData)
+          }
+        } else if (props.entity === 'profile'){
+          if (props.isEdit){
+            await updateOne('profile', submitData.profile_ID, submitData)
+          }else{
+            await createOne('profile', submitData)
+          }
+
+          // array
+          if (cleanArrayData.length > 0 || props.isEdit){
+            await syncProfileArrayEntries(submitData.profile_ID, cleanArrayData)
           }
         }
 

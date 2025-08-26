@@ -45,7 +45,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in arrayData" :key="row.id || row.gb_acc || row.id_ref">
+              <tr v-for="row in arrayData" :key="row.id || row.gb_acc || row.id_ref || row.profile_array_ID">
                 <td v-for="column in arrayColumns" :key="column">
                   {{ formatValue(row[column]) }}
                 </td>
@@ -79,6 +79,29 @@
             <p><strong>ID:</strong> {{ sample.sample_ID }}</p>
             <p v-if="sample.organism"><strong>Organism:</strong> {{ sample.organism }}</p>
             <p v-if="sample.source_name"><strong>Source:</strong> {{ sample.source_name }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dataset Profiles (for dataset entity) -->
+      <div v-if="entity === 'dataset'" class="profiles-section">
+        <div class="section-header">
+          <h3>Associated Profiles</h3>
+        </div>
+        
+        <div v-if="profilesLoading" class="loading-small">
+          Loading profiles...
+        </div>
+        
+        <div v-else-if="profilesError" class="error-small">
+          {{ profilesError }}
+        </div>
+        
+        <div v-else-if="profilesData.length > 0" class="profiles-list">
+          <div v-for="profile in profilesData" :key="profile.profile_ID" class="profile-item">
+            <h4>{{ profile.title || profile.profile_ID }}</h4>
+            <p><strong>ID:</strong> {{ profile.profile_ID }}</p>
+            <p v-if="profile.organism"><strong>Organism:</strong> {{ profile.organism }}</p>
           </div>
         </div>
       </div>
@@ -121,6 +144,10 @@ export default {
     const samplesLoading = ref(false)
     const samplesError = ref('')
 
+    const profilesData = ref([])
+    const profilesLoading = ref(false)
+    const profilesError = ref('')
+
     const displayName = computed(() => {
       return props.item.title || 
              props.item.name || 
@@ -132,13 +159,14 @@ export default {
     })
 
     const hasArrayData = computed(() => {
-      return props.entity === 'platform' || props.entity === 'sample'
+      return props.entity === 'platform' || props.entity === 'sample' || props.entity === 'profile'
     })
 
     const arrayTitle = computed(() => {
       switch(props.entity) {
         case 'platform': return 'Platform Array Data'
         case 'sample': return 'Sample Expression Data'
+        case 'profile': return 'Profile Expression Data'
         default: return 'Array Data'
       }
     })
@@ -147,6 +175,7 @@ export default {
       switch(props.entity) {
         case 'platform': return ['id', 'gb_acc', 'spot_id', 'species_specific_name', 'annotation_data', 'sequence_type', 'target_description', 'representative_public_id', 'gene_title', 'gene_symbol', 'entrez_gene_id', 'refseq_transcript_id', 'gene_ontology_biological_process', 'gene_ontology_cellular_component', 'gene_ontology_molecular_function']
         case 'sample': return ['id_ref', 'value', 'abs_call', 'detection_p_value']
+        case 'profile': return ['profile_array_ID', 'sample_ID', 'title', 'value_number', 'ranking']
         default: return []
       }
     })
@@ -169,6 +198,8 @@ export default {
         case 'platform': return props.item.platform_ID
         case 'sample': return props.item.sample_ID  
         case 'series': return props.item.series_ID
+        case 'dataset': return props.item.dataset_ID
+        case 'profile': return props.item.profile_ID
         default: return props.item.id
       }
     }
@@ -187,6 +218,8 @@ export default {
           response = await api.getPlatformArray(id)
         } else if (props.entity === 'sample') {
           response = await api.getExpressionOfSample(id)
+        } else if (props.entity === 'profile') {
+          response = await api.getProfileArraysOfProfile(id)
         }
         
         arrayData.value = (response.data || []).slice(0, 5) // Show first 5 entries
@@ -208,6 +241,8 @@ export default {
           response = await api.getPlatformArray(id)
         } else if (props.entity === 'sample') {
           response = await api.getExpressionOfSample(id)
+        } else if (props.entity === 'profile') {
+          response = await api.getProfileArraysOfProfile(id)
         }
         
         arrayData.value = response.data || []
@@ -236,6 +271,23 @@ export default {
       }
     }
 
+    const loadDatasetProfiles = async () => {
+      if (props.entity !== 'dataset') return
+      
+      profilesLoading.value = true
+      profilesError.value = ''
+      
+      try {
+        const id = getIdField()
+        const response = await api.getProfilesOfDataset(id)
+        profilesData.value = response.data || []
+      } catch (err) {
+        profilesError.value = `Failed to load profiles: ${err.message}`
+      } finally {
+        profilesLoading.value = false
+      }
+    }
+
     const formatKey = (key) => {
       return key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')
     }
@@ -258,6 +310,7 @@ export default {
       if (isVisible && Object.keys(props.item).length > 0) {
         loadArrayData()
         loadSeriesSamples()
+        loadDatasetProfiles()
         showingAllArrayData.value = false
       }
     })
@@ -270,6 +323,9 @@ export default {
       samplesData,
       samplesLoading,
       samplesError,
+      profilesData,
+      profilesLoading,
+      profilesError,
       displayName,
       entityDisplayName,
       hasArrayData,
@@ -441,6 +497,31 @@ export default {
   font-size: 0.9rem;
   color: #4a5568;
 }
+
+.profiles-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.profile-item {
+  background: #f7fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.profile-item h4 {
+  margin: 0 0 0.5rem 0;
+  color: #2d3748;
+}
+
+.profile-item p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
 
 .modal-actions {
   display: flex;
