@@ -105,6 +105,60 @@
           No profiles available
         </div>
       </div>
+
+      <!-- Platform samples -->
+      <div v-if="entity === 'platform'" class="platforms-section">
+        <div class="section-header">
+          <h3>Platform Samples</h3>
+        </div>
+
+        <div v-if="platformsamplesLoading" class="loading-small">
+          Loading samples...
+        </div>
+
+        <div v-else-if="platformsamplesError" class="error-small">
+          {{ platformsamplesError }}
+        </div>
+
+        <div v-else-if="platformsamplesData.length > 0" class="platforms-list">
+          <div v-for="platformsample in platformsamplesData" :key="platformsample.sample_ID" class="platform-item">
+            <h4>{{ platformsample.title || platformsample.sample_ID }}</h4>
+            <p><strong>ID:</strong> {{ platformsample.sample_ID }}</p>
+            <p v-if="platformsample.organism"><strong>Organism:</strong> {{ platformsample.organism }}</p>
+          </div>
+        </div>
+        
+        <div v-else class="empty-array">
+          No samples available
+        </div>
+      </div>
+
+      <!-- Series of Sample -->
+      <div v-if="entity === 'sample'" class="samples-section">
+        <div class="section-header">
+          <h3>Series associated with Sample</h3>
+        </div>
+
+        <div v-if="sampleseriesLoading" class="loading-small">
+          Loading samples...
+        </div>
+
+        <div v-else-if="sampleseriesError" class="error-small">
+          {{ sampleseriesError }}
+        </div>
+
+        <div v-else-if="sampleseriesData.length > 0" class="samples-list">
+          <div v-for="sampleseries in sampleseriesData" :key="sampleseries.series_ID" class="sample-item">
+            <h4>{{ sampleseries.title || sampleseries.series_ID }}</h4>
+            <p><strong>ID:</strong> {{ sampleseries.series_ID }}</p>
+            <p v-if="sampleseries.organism"><strong>Organism:</strong> {{ sampleseries.organism }}</p>
+          </div>
+        </div>
+        
+        <div v-else class="empty-array">
+          No series available
+        </div>
+      </div>
       
       <div class="modal-actions">
         <button @click="$emit('close')" class="btn btn-secondary">Close</button>
@@ -146,6 +200,14 @@ export default {
     const profilesData = ref([])
     const profilesLoading = ref(false)
     const profilesError = ref('')
+
+    const platformsamplesData = ref([])
+    const platformsamplesLoading = ref(false)
+    const platformsamplesError = ref('')
+
+    const sampleseriesData = ref([])
+    const sampleseriesLoading = ref(false)
+    const sampleseriesError = ref('')
 
     // --- Additional: series published (not stored on dataset) ---
     const seriesPublishedRaw = ref(null)
@@ -287,6 +349,40 @@ export default {
       }
     }
 
+    const loadPlatformSamples = async () => {
+      if (props.entity !== 'platform') return
+      
+      platformsamplesLoading.value = true
+      platformsamplesError.value = ''
+      
+      try {
+        const id = getIdField()
+        const response = await api.getSamplesOfPlatform(id)
+        platformsamplesData.value = response?.data || []
+      } catch (err) {
+        platformsamplesError.value = `Failed to load profiles: ${err.message}`
+      } finally {
+        platformsamplesLoading.value = false
+      }
+    }
+
+    const loadSampleSeries = async () => {
+      if (props.entity !== 'sample') return
+      
+      sampleseriesLoading.value = true
+      sampleseriesError.value = ''
+      
+      try {
+        const id = getIdField()
+        const response = await api.getSeriesOfSample(id)
+        sampleseriesData.value = response?.data || []
+      } catch (err) {
+        sampleseriesError.value = `Failed to load profiles: ${err.message}`
+      } finally {
+        sampleseriesLoading.value = false
+      }
+    }
+
     const formatKey = (key) => {
       return key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')
     }
@@ -311,15 +407,21 @@ export default {
         arrayData.value = []
         samplesData.value = []
         profilesData.value = []
+        platformsamplesData.value = []
+        sampleseriesData.value = []
         arrayError.value = ''
         samplesError.value = ''
         profilesError.value = ''
+        platformsamplesError.value = ''
+        sampleseriesError.value = ''
         
         // Load all relevant data
         loadArrayData()
         loadSeriesSamples()
         loadDatasetProfiles()
         loadSeriesCreatedAt()
+        loadPlatformSamples()
+        loadSampleSeries()
       }
     }
 
@@ -361,6 +463,12 @@ export default {
       profilesData,
       profilesLoading,
       profilesError,
+      platformsamplesData,
+      platformsamplesLoading,
+      platformsamplesError,
+      sampleseriesData,
+      sampleseriesLoading,
+      sampleseriesError,
       displayName,
       entityDisplayName,
       hasArrayData,
