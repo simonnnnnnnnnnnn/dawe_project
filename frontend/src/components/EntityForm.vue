@@ -478,15 +478,7 @@
               class="form-input"
             >
           </div>
-          <div class="form-group">
-            <label for="series_published">Series Published:</label>
-            <input 
-              id="series_published" 
-              v-model="localFormData.series_published"
-              type="text" 
-              class="form-input"
-            >
-          </div>
+          <!-- delete series published -->
         </template>
 
         <div class="form-actions">
@@ -559,7 +551,6 @@ export default {
       reference_series: '',
       value_type: '',
       sample_count: '',
-      series_published: '',
       // profile fields
       profile_ID: '',
       title: '',

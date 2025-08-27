@@ -22,6 +22,9 @@
       <div v-if="hasArrayData" class="array-section">
         <div class="section-header">
           <h3>{{ arrayTitle }}</h3>
+          <button v-if="!showingAllArrayData" @click="loadMoreArrayData" class="btn btn-secondary btn-small">
+            Load More
+          </button>
         </div>
         
         <div v-if="arrayLoading" class="loading-small">
@@ -73,10 +76,6 @@
             <p v-if="sample.organism"><strong>Organism:</strong> {{ sample.organism }}</p>
           </div>
         </div>
-        
-        <div v-else class="empty-array">
-          No samples available
-        </div>
       </div>
 
       <!-- Dataset profiles -->
@@ -100,10 +99,6 @@
             <p v-if="profile.organism"><strong>Organism:</strong> {{ profile.organism }}</p>
           </div>
         </div>
-        
-        <div v-else class="empty-array">
-          No profiles available
-        </div>
       </div>
       
       <div class="modal-actions">
@@ -114,7 +109,7 @@
 </template>
 
 <script>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import * as api from '../api.js'
 
 export default {
@@ -138,6 +133,7 @@ export default {
     const arrayData = ref([])
     const arrayLoading = ref(false)
     const arrayError = ref('')
+    const showingAllArrayData = ref(false)
     
     const samplesData = ref([])
     const samplesLoading = ref(false)
@@ -148,7 +144,8 @@ export default {
     const profilesError = ref('')
 
     // --- Additional: series published (not stored on dataset) ---
-    const seriesPublishedRaw = ref(null)
+    // We'll fetch the referenced series' created_at via api.fetchOne('series/[id]')
+    const seriesPublishedRaw = ref(null) // will hold the created_at string or null
 
     const loadSeriesCreatedAt = async () => {
       if (props.entity !== 'dataset') return
@@ -158,14 +155,22 @@ export default {
         return
       }
       try {
+        // expected API shape: api.fetchOne('series/<id>')
         const response = await api.fetchOne('series', seriesId)
         const data = (response && response.data) ? response.data : response
+        // prefer created_at, then createdAt
         const created = data && (data.created_at || data.createdAt)
         seriesPublishedRaw.value = created ?? null
       } catch (err) {
+        // on error, treat as not published (null)
         seriesPublishedRaw.value = null
       }
     }
+
+    // watch for reference_series changes in case the dataset prop updates
+    watch(() => props.item.reference_series, () => {
+      loadSeriesCreatedAt()
+    })
 
     const displayName = computed(() => {
       return props.item.title || 
@@ -192,7 +197,7 @@ export default {
 
     const arrayColumns = computed(() => {
       switch(props.entity) {
-        case 'platform': return ['id', 'gb_acc', 'spot_id', 'species_scientific_name', 'annotation_data', 'sequence_type', 'target_description', 'representative_public_id', 'gene_title', 'gene_symbol', 'entrez_gene_id', 'refseq_transcript_id', 'gene_ontology_biological_process', 'gene_ontology_cellular_component', 'gene_ontology_molecular_function']
+        case 'platform': return ['id', 'gb_acc', 'spot_id', 'species', 'source_file', 'title']
         case 'sample': return ['id_ref', 'value', 'abs_call', 'detection_p_value']
         case 'profile': return ['profile_array_ID', 'sample_ID', 'title', 'value_number', 'ranking']
         default: return []
@@ -209,7 +214,9 @@ export default {
         }
       })
       
+      // Add computed field for dataset entity: series_published
       if (props.entity === 'dataset') {
+        // If we have a created_at from the referenced series, show it; otherwise show 'not published'
         filtered['series_published'] = seriesPublishedRaw.value ? String(seriesPublishedRaw.value) : 'not published'
       }
 
@@ -245,9 +252,34 @@ export default {
           response = await api.getProfileArraysOfProfile(id)
         }
         
-        arrayData.value = response?.data || []
+        arrayData.value = response.data || []
+        showingAllArrayData.value = true
       } catch (err) {
-        arrayError.value = `Failed to load array data: ${err.message}`
+        arrayError.value = `Failed to load more data: ${err.message}`
+      } finally {
+        arrayLoading.value = false
+      }
+    }
+
+    const loadMoreArrayData = async () => {
+      arrayLoading.value = true
+      
+      try {
+        let response
+        const id = getIdField()
+        
+        if (props.entity === 'platform') {
+          response = await api.getPlatformArray(id)
+        } else if (props.entity === 'sample') {
+          response = await api.getExpressionOfSample(id)
+        } else if (props.entity === 'profile') {
+          response = await api.getProfileArraysOfProfile(id)
+        }
+        
+        arrayData.value = response.data || []
+        showingAllArrayData.value = true
+      } catch (err) {
+        arrayError.value = `Failed to load more data: ${err.message}`
       } finally {
         arrayLoading.value = false
       }
@@ -262,7 +294,7 @@ export default {
       try {
         const id = getIdField()
         const response = await api.getSamplesOfSeries(id)
-        samplesData.value = response?.data || []
+        samplesData.value = response.data || []
       } catch (err) {
         samplesError.value = `Failed to load samples: ${err.message}`
       } finally {
@@ -279,7 +311,7 @@ export default {
       try {
         const id = getIdField()
         const response = await api.getProfilesOfDataset(id)
-        profilesData.value = response?.data || []
+        profilesData.value = response.data || []
       } catch (err) {
         profilesError.value = `Failed to load profiles: ${err.message}`
       } finally {
@@ -304,50 +336,14 @@ export default {
       return String(value)
     }
 
-    // Load all data when modal opens
-    const loadAllData = () => {
-      if (props.show && Object.keys(props.item).length > 0) {
-        // Reset all data
-        arrayData.value = []
-        samplesData.value = []
-        profilesData.value = []
-        arrayError.value = ''
-        samplesError.value = ''
-        profilesError.value = ''
-        
-        // Load all relevant data
+    // Watch for when modal opens to load data
+    watch(() => props.show, (isVisible) => {
+      if (isVisible && Object.keys(props.item).length > 0) {
         loadArrayData()
         loadSeriesSamples()
         loadDatasetProfiles()
         loadSeriesCreatedAt()
-      }
-    }
-
-    // Watch for when modal opens or item/entity changes
-    watch(() => props.show, (isVisible) => {
-      if (isVisible) {
-        loadAllData()
-      }
-    })
-
-    // Also watch for item changes in case it updates while modal is open
-    watch(() => props.item, () => {
-      if (props.show) {
-        loadAllData()
-      }
-    }, { deep: true })
-
-    // Also watch for entity changes
-    watch(() => props.entity, () => {
-      if (props.show) {
-        loadAllData()
-      }
-    })
-
-    // Load data immediately if modal is already open
-    onMounted(() => {
-      if (props.show) {
-        loadAllData()
+        showingAllArrayData.value = false
       }
     })
 
@@ -355,6 +351,7 @@ export default {
       arrayData,
       arrayLoading,
       arrayError,
+      showingAllArrayData,
       samplesData,
       samplesLoading,
       samplesError,
@@ -367,6 +364,7 @@ export default {
       arrayTitle,
       arrayColumns,
       mainFields,
+      loadMoreArrayData,
       formatKey,
       formatValue
     }
@@ -412,11 +410,6 @@ export default {
   background: transparent;
   border: none;
   font-size: 1.6rem;
-  cursor: pointer;
-}
-
-.close-btn:hover {
-  opacity: 0.7;
 }
 
 .entity-details {
@@ -440,7 +433,7 @@ export default {
   color: #4a5568;
 }
 
-.array-section, .samples-section, .profiles-section {
+.array-section, .samples-section {
   margin: 2rem 0;
   border-top: 1px solid #edf2f7;
   padding-top: 1rem;
@@ -450,102 +443,19 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.section-header h3 {
-  margin: 0;
-  color: #2d3748;
-}
-
-.array-table-container {
-  overflow-x: auto;
-  max-height: 300px;
-  overflow-y: auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-}
-
-.array-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.array-table thead {
-  background: #f7fafc;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.array-table th {
-  padding: 0.75rem;
-  text-align: left;
-  font-weight: 600;
-  color: #4a5568;
-  border-bottom: 2px solid #e2e8f0;
-  background: #f7fafc;
-}
-
-.array-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.array-table tbody tr:hover {
-  background: #f7fafc;
 }
 
 .samples-list, .profiles-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
 
 .profile-item, .sample-item {
-  background: #f7fafc;
-  border: 1px solid #e2e8f0;
-  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid #edf2f7;
+  padding: 0.75rem;
   border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.profile-item:hover, .sample-item:hover {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transform: translateY(-1px);
-}
-
-.profile-item h4, .sample-item h4 {
-  margin: 0 0 0.5rem 0;
-  color: #2d3748;
-  font-size: 1.1rem;
-}
-
-.profile-item p, .sample-item p {
-  margin: 0.25rem 0;
-  color: #4a5568;
-  font-size: 0.9rem;
-}
-
-.loading-small, .error-small, .empty-array {
-  padding: 2rem;
-  text-align: center;
-  color: #718096;
-}
-
-.error-small {
-  color: #e53e3e;
-  background: #fff5f5;
-  border: 1px solid #feb2b2;
-  border-radius: 4px;
-}
-
-.modal-actions {
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
 }
 
 @media (max-width: 700px) {
@@ -555,21 +465,12 @@ export default {
     align-items: stretch;
   }
   
-  .samples-list, .profiles-list {
+  .samples-list {
     grid-template-columns: 1fr;
   }
   
   .detail-item strong {
     width: 120px;
-    font-size: 0.9rem;
-  }
-  
-  .array-table {
-    font-size: 0.85rem;
-  }
-  
-  .array-table th, .array-table td {
-    padding: 0.5rem;
   }
 }
 </style>

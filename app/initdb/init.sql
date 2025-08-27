@@ -90,7 +90,6 @@ CREATE TABLE dataset (
     reference_series varchar(50),
     value_type varchar(50),
     sample_count integer,
-    series_published DATE,
     FOREIGN KEY (reference_series) REFERENCES series(series_ID) ON DELETE cascade
 );
 
@@ -159,12 +158,12 @@ INSERT INTO series_samples VALUES
   ('GSE1003','GSM5004');
 
 -- Datasets (curated summaries) – now point to existing series
-INSERT INTO dataset (dataset_ID, title, summary, organism, citation, platform, reference_series, value_type, sample_count, series_published)
+INSERT INTO dataset (dataset_ID, title, summary, organism, citation, platform, reference_series, value_type, sample_count)
 VALUES
   ('GDS1000', 'Gene Expression Lung Cancer', 'Gene expression study of human lung cancer tissue vs normal controls', 'Homo sapiens',
-   'Smith et al., Nature 2020', 'GPL100', 'GSE1001', 'log2 expression', 2, '2023-04-03'),
+   'Smith et al., Nature 2020', 'GPL100', 'GSE1001', 'log2 expression', 2),
   ('GDS2000', 'Mouse Cardiac Study', 'Mouse heart transcriptome changes in cardiac study', 'Mus musculus',
-   'Lee et al., Cell Metab 2021', 'GPL200', 'GSE1002', 'RPKM', 1, '2022-11-02');
+   'Lee et al., Cell Metab 2021', 'GPL200', 'GSE1002', 'RPKM', 1);
 
 -- Profiles belonging to datasets
 INSERT INTO profile (profile_ID, dataset_ID, title, organism)

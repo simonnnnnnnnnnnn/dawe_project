@@ -168,7 +168,6 @@ export default {
       reference_series: '',
       value_type: '',
       sample_count: null,
-      series_published: '',
       // profile filds
       profile_ID: '',
       title: '',
