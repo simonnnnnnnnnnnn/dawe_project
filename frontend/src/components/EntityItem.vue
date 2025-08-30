@@ -4,10 +4,6 @@
     <div class="item-content">
       <h3>{{ displayName }}</h3>
       <p v-if="item.organism" class="organism">{{ item.organism }}</p>
-      <p v-if="item.technology" class="technology">Tech: {{ item.technology }}</p>
-      <p v-if="item.source_name" class="source">Source: {{ item.source_name }}</p>
-      <p v-if="item.summary" class="summary">{{ truncateText(item.summary, 100) }}</p>
-      <p v-if="item.descript" class="description">{{ truncateText(item.descript, 100) }}</p>
       <p class="item-id">ID: {{ getIdField() }}</p>
     </div>
     <div class="item-actions">

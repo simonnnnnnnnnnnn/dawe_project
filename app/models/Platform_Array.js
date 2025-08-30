@@ -10,13 +10,14 @@ class Platform_Array extends Crud_Basics{
     // validation of inputs --> ensure corrent datatypes and so on
     // crud functions can be concentrated in a parent class later on
     validate(record){
-        if (!record.gb_acc || typeof record.gb_acc !== 'string'){
-            throw new Error("gb_acc must be a non-empty string");
+        if (!record.internal_id || typeof record.internal_id !== 'string'){
+            throw new Error("internal_id must be a non-empty string");
         }
         if (!record.platform_ID || typeof record.platform_ID !== 'string'){
             throw new Error("platform_ID must be a non-empty string");
         }
         for (const field of ['id',
+                            'gb_acc',
                             'spot_id',
                             'species_scientific_name',
                             'annotation_data',

@@ -13,7 +13,7 @@
         <div class="details-grid">
           <div v-for="(value, key) in mainFields" :key="key" class="detail-item">
             <strong>{{ formatKey(key) }}:</strong>
-            <span>{{ formatValue(value) }}</span>
+            <span class="detail-value">{{ formatValue(value) }}</span>
           </div>
         </div>
       </div>
@@ -254,7 +254,7 @@ export default {
 
     const arrayColumns = computed(() => {
       switch(props.entity) {
-        case 'platform': return ['id', 'gb_acc', 'spot_id', 'species_scientific_name', 'annotation_data', 'sequence_type', 'target_description', 'representative_public_id', 'gene_title', 'gene_symbol', 'entrez_gene_id', 'refseq_transcript_id', 'gene_ontology_biological_process', 'gene_ontology_cellular_component', 'gene_ontology_molecular_function']
+        case 'platform': return ['id', 'gb_acc', 'spot_id', 'species_scientific_name', 'annotation_data', 'sequence_type', 'sequence_source', 'target_description', 'representative_public_id', 'gene_title', 'gene_symbol', 'entrez_gene_id', 'refseq_transcript_id', 'gene_ontology_biological_process', 'gene_ontology_cellular_component', 'gene_ontology_molecular_function']
         case 'sample': return ['id_ref', 'value', 'abs_call', 'detection_p_value']
         case 'profile': return ['profile_array_ID', 'sample_ID', 'title', 'value_number', 'ranking']
         default: return []
@@ -394,9 +394,7 @@ export default {
       if (typeof value === 'object') {
         return JSON.stringify(value, null, 2)
       }
-      if (typeof value === 'string' && value.length > 100) {
-        return value.substring(0, 100) + '...'
-      }
+      // Removed the truncation logic - now returns full string
       return String(value)
     }
 
@@ -546,6 +544,15 @@ export default {
   display: inline-block;
   width: 150px;
   color: #4a5568;
+  vertical-align: top;
+}
+
+.detail-value {
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
+  display: inline-block;
+  max-width: calc(100% - 160px);
 }
 
 .array-section, .samples-section, .profiles-section {
@@ -604,13 +611,13 @@ export default {
   background: #f7fafc;
 }
 
-.samples-list, .profiles-list {
+.platforms-list, .samples-list, .profiles-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1rem;
 }
 
-.profile-item, .sample-item {
+.platform-item, .profile-item, .sample-item {
   background: #f7fafc;
   border: 1px solid #e2e8f0;
   padding: 1rem;
@@ -618,18 +625,18 @@ export default {
   transition: all 0.2s ease;
 }
 
-.profile-item:hover, .sample-item:hover {
+.platform-item:hover, .profile-item:hover, .sample-item:hover {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   transform: translateY(-1px);
 }
 
-.profile-item h4, .sample-item h4 {
+.platform-item h4, .profile-item h4, .sample-item h4 {
   margin: 0 0 0.5rem 0;
   color: #2d3748;
   font-size: 1.1rem;
 }
 
-.profile-item p, .sample-item p {
+.profile-item p, .profile-item p, .sample-item p {
   margin: 0.25rem 0;
   color: #4a5568;
   font-size: 0.9rem;
@@ -663,13 +670,17 @@ export default {
     align-items: stretch;
   }
   
-  .samples-list, .profiles-list {
+  .platforms-list, .samples-list, .profiles-list {
     grid-template-columns: 1fr;
   }
   
   .detail-item strong {
     width: 120px;
     font-size: 0.9rem;
+  }
+  
+  .detail-value {
+    max-width: calc(100% - 130px);
   }
   
   .array-table {

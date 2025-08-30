@@ -144,19 +144,34 @@ export default {
     const formData = reactive({
       // Platform fields
       platform_ID: '',
+      status_platform: '',
       title: '',
-      organism: '',
       technology: '',
+      distribution_platform: '',
+      organism: '',
+      manufacturer: '',
       descript: '',
+      web_link: '',
       // Sample fields
       sample_ID: '',
+      status_sample: '',
+      title: '',
+      sample_type: '',
       source_name: '',
+      organism: '',
+      extracted_molecule: '',
       characteristics: '',
-      protocol: '',
+      descript: '',
       // Series fields
       series_ID: '',
+      status_series: '',
+      title: '',
+      organism: '',
+      experiment_type: '',
       summary: '',
       overall_design: '',
+      contributors: '',
+      citation: '',
       supplementary_data_link: '',
       // dataset fields
       dataset_ID: '',
@@ -171,7 +186,9 @@ export default {
       // profile filds
       profile_ID: '',
       title: '',
-      organism: ''
+      annotation: '',
+      organism: '',
+      dataset_type: ''
     })
 
     const arrayData = ref([])

@@ -14,9 +14,9 @@ class StorageHandler{
         });
         this.primKeyMap = {
             platform: 'platform_ID',
-            platform_array: 'gb_acc',
+            platform_array: 'internal_id',
             samples: 'sample_ID',
-            sample_array: 'id_ref',
+            sample_array: 'internal_id',
             series: 'series_ID',
             series_samples: ['series_ID', 'sample_ID'],
             dataset: 'dataset_ID',

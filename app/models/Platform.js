@@ -13,7 +13,7 @@ class Platform extends Crud_Basics{
         if (!record.platform_ID || typeof record.platform_ID !== 'string'){
             throw new Error("platform_ID must be a non-empty string");
         }
-        for (const field of ['title', 'organism', 'technology', 'descript']){
+        for (const field of ['status_platform', 'title', 'technology', 'distribution_platform', 'organism', 'manufacturer', 'descript', 'web_link']){
             if (record[field] !== undefined && typeof record[field] !== 'string'){
                 throw new Error(`${field} is not a string`);
             }

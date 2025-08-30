@@ -22,6 +22,16 @@
             >
           </div>
           <div class="form-group">
+            <label for="status_platform">Status:</label>
+            <input 
+              id="status_platform" 
+              v-model="localFormData.status_platform" 
+              type="text" 
+              class="form-input" 
+              required
+            >
+          </div>
+          <div class="form-group">
             <label for="title">Title:</label>
             <input 
               id="title" 
@@ -29,6 +39,24 @@
               type="text" 
               class="form-input" 
               required
+            >
+          </div>
+          <div class="form-group">
+            <label for="technology">Technology:</label>
+            <input 
+              id="technology" 
+              v-model="localFormData.technology" 
+              type="text" 
+              class="form-input"
+            >
+          </div>
+          <div class="form-group">
+            <label for="distribution_platform">Distribution:</label>
+            <input 
+              id="distribution_platform" 
+              v-model="localFormData.distribution_platform" 
+              type="text" 
+              class="form-input" 
             >
           </div>
           <div class="form-group">
@@ -41,10 +69,10 @@
             >
           </div>
           <div class="form-group">
-            <label for="technology">Technology:</label>
+            <label for="manufacturer">Manufacturer:</label>
             <input
-              id="technology"
-              v-model="localFormData.technology"
+              id="manufacturer"
+              v-model="localFormData.manufacturer"
               type="text"
               class="form-input"
             >
@@ -55,8 +83,18 @@
               id="descript"
               v-model="localFormData.descript"
               class="form-input"
-              rows="3"
+              rows="6"
             ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="web_link">Web Link:</label>
+            <input 
+              id="web_link" 
+              v-model="localFormData.web_link" 
+              type="text" 
+              class="form-input" 
+              rows="2"
+            >
           </div>
 
           <!-- Platform Array Data Section -->
@@ -78,6 +116,10 @@
                 </div>
                 
                 <div class="array-fields">
+                  <div class="form-group">
+                    <label>internal ID:</label>
+                    <input v-model="entry.id" type="text" class="form-input" required>
+                  </div>
                   <div class="form-group">
                     <label>ID:</label>
                     <input v-model="entry.id" type="text" class="form-input" required>
@@ -101,6 +143,10 @@
                   <div class="form-group">
                     <label>Sequence Type:</label>
                     <input v-model="entry.sequence_type" type="text" class="form-input">
+                  </div>
+                  <div class="form-group">
+                    <label>Sequence Source:</label>
+                    <input v-model="entry.sequence_source" type="text" class="form-input">
                   </div>
                   <div class="form-group">
                     <label>Target Description:</label>
@@ -158,6 +204,16 @@
             >
           </div>
           <div class="form-group">
+            <label for="title">Status:</label>
+            <input 
+              id="status_sample" 
+              v-model="localFormData.status_sample" 
+              type="text" 
+              class="form-input" 
+              required
+            >
+          </div>
+          <div class="form-group">
             <label for="title">Title:</label>
             <input 
               id="title" 
@@ -165,6 +221,15 @@
               type="text" 
               class="form-input" 
               required
+            >
+          </div>
+          <div class="form-group">
+            <label for="title">Sample Type:</label>
+            <input 
+              id="sample_type" 
+              v-model="localFormData.sample_type" 
+              type="text" 
+              class="form-input" 
             >
           </div>
           <div class="form-group">
@@ -186,6 +251,15 @@
             >
           </div>
           <div class="form-group">
+            <label for="organism">Extracted Molecule:</label>
+            <input 
+              id="extracted_molecule" 
+              v-model="localFormData.extracted_molecule"
+              type="text" 
+              class="form-input"
+            >
+          </div>
+          <div class="form-group">
             <label for="characteristics">Characteristics (JSON):</label>
             <textarea 
               id="characteristics" 
@@ -196,12 +270,12 @@
             ></textarea>
           </div>
           <div class="form-group">
-            <label for="protocol">Protocol:</label>
+            <label for="protocol">Description:</label>
             <textarea 
-              id="protocol" 
-              v-model="localFormData.protocol"
+              id="descript" 
+              v-model="localFormData.descript"
               class="form-input"
-              rows="2"
+              rows="5"
             ></textarea>
           </div>
           <div class="form-group">
@@ -235,6 +309,10 @@
                 
                 <div class="array-fields">
                   <div class="form-group">
+                    <label>internal ID:</label>
+                    <input v-model="entry.internal_id" type="text" class="form-input" required>
+                  </div>
+                  <div class="form-group">
                     <label>ID Ref:</label>
                     <input v-model="entry.id_ref" type="text" class="form-input" required>
                   </div>
@@ -264,10 +342,21 @@
         <!-- Profile Fields -->
         <template v-if="entity === 'profile'">
           <div class="form-group">
-            <label for="profile_ID">Platform ID:</label>
+            <label for="profile_ID">Profile ID:</label>
             <input 
               id="profile_ID" 
               v-model="localFormData.profile_ID" 
+              type="text" 
+              class="form-input" 
+              :disabled="isEdit"
+              required
+            >
+          </div>
+          <div class="form-group">
+            <label for="profile_ID">Dataset ID:</label>
+            <input 
+              id="dataset_ID" 
+              v-model="localFormData.dataset_ID" 
               type="text" 
               class="form-input" 
               :disabled="isEdit"
@@ -285,12 +374,34 @@
             >
           </div>
           <div class="form-group">
+            <label for="profile_ID">Annotation:</label>
+            <input 
+              id="annotation" 
+              v-model="localFormData.annotation" 
+              type="text" 
+              class="form-input" 
+              :disabled="isEdit"
+              required
+            >
+          </div>
+          <div class="form-group">
             <label for="organism">Organism:</label>
             <input 
               id="organism" 
               v-model="localFormData.organism"
               type="text" 
               class="form-input"
+            >
+          </div>
+          <div class="form-group">
+            <label for="profile_ID">Dataset Type:</label>
+            <input 
+              id="dataset_type" 
+              v-model="localFormData.dataset_type" 
+              type="text" 
+              class="form-input" 
+              :disabled="isEdit"
+              required
             >
           </div>
 
@@ -353,10 +464,41 @@
             >
           </div>
           <div class="form-group">
+            <label for="series_ID">Status:</label>
+            <input 
+              id="status_series" 
+              v-model="localFormData.status_series"
+              type="text" 
+              class="form-input" 
+              :disabled="isEdit"
+              required
+            >
+          </div>
+          <div class="form-group">
             <label for="title">Title:</label>
             <input 
               id="title" 
               v-model="localFormData.title"
+              type="text" 
+              class="form-input" 
+              required
+            >
+          </div>
+          <div class="form-group">
+            <label for="title">Organism:</label>
+            <input 
+              id="organism" 
+              v-model="localFormData.organism"
+              type="text" 
+              class="form-input" 
+              required
+            >
+          </div>
+          <div class="form-group">
+            <label for="title">Experiment Type:</label>
+            <input 
+              id="experiment_type" 
+              v-model="localFormData.experiment_type"
               type="text" 
               class="form-input" 
               required
@@ -379,6 +521,26 @@
               class="form-input"
               rows="2"
             ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="title">Contributors:</label>
+            <input 
+              id="contributors" 
+              v-model="localFormData.contributors"
+              type="text" 
+              class="form-input" 
+              required
+            >
+          </div>
+          <div class="form-group">
+            <label for="title">Citation:</label>
+            <input 
+              id="title" 
+              v-model="localFormData.citation"
+              type="text" 
+              class="form-input" 
+              required
+            >
           </div>
           <div class="form-group">
             <label for="supplementary_data_link">Supplementary Data Link:</label>
@@ -527,19 +689,35 @@ export default {
     const localFormData = reactive({
       // Platform fields
       platform_ID: '',
+      status_platform: '',
       title: '',
-      organism: '',
       technology: '',
+      distribution_platform: '',
+      organism: '',
+      manufacturer: '',
       descript: '',
+      web_link: '',
       // Sample fields
       sample_ID: '',
+      status_sample: '',
+      title: '',
+      sample_type: '',
       source_name: '',
+      organism: '',
+      extracted_molecule: '',
       characteristics: '',
+      descript: '',
       protocol: '',
       // Series fields
       series_ID: '',
+      status_series: '',
+      title: '',
+      organism: '',
+      experiment_type: '',
       summary: '',
       overall_design: '',
+      contributors: '',
+      citation: '',
       supplementary_data_link: '',
       // Dataset Fileds
       dataset_ID: '',
@@ -553,8 +731,11 @@ export default {
       sample_count: '',
       // profile fields
       profile_ID: '',
+      dataset_ID: '',
       title: '',
-      organism: ''
+      annotation: '',
+      organism: '',
+      dataset_type: ''
 
     })
 
@@ -565,12 +746,14 @@ export default {
     })
 
     const createEmptyPlatformArrayEntry = () => ({
+      internal_id: '',
       id: '',
       gb_acc: '',
       spot_id: '',
       species_scientific_name: '',
       annotation_data: '',
       sequence_type: '',
+      sequence_source: '',
       target_description: '',
       representative_public_id: '',
       gene_title: '',
@@ -583,6 +766,7 @@ export default {
     })
 
     const createEmptySampleArrayEntry = () => ({
+      internal_id: '',
       id_ref: '',
       value: null,
       abs_call: '',

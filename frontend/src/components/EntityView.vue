@@ -22,7 +22,7 @@ export default{
             return props.item.name || props.item.title || `${props.entity.charAt(0).toUpperCase() + props.entity.slice(1)} #${props.item.id}`
         })
         const otherProperties = computed(() => {
-            const excluded = ['id', 'name', 'description', 'title'];
+            const excluded = ['id', 'name', 'title'];
             const filtered  ={}
 
             Object.keys(props.item).forEach(key => {
